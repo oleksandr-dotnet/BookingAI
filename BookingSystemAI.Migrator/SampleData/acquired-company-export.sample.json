@@ -1,0 +1,27 @@
+{
+  "sourceCompanyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "hosts": [
+    {
+      "externalId": "host-001",
+      "email": "migrated-host@acquired.test",
+      "apartments": [
+        {
+          "externalId": "apt-001",
+          "name": "Riverside Studio",
+          "description": "Bright studio apartment overlooking the river."
+        },
+        {
+          "externalId": "apt-002",
+          "name": "Garden Flat",
+          "description": "Ground-floor flat with private garden access."
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "externalId": "client-001",
+      "email": "migrated-client@acquired.test"
+    }
+  ]
+}

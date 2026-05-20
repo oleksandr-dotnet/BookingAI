@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Project: BookingSystemAI — booking system API (greenfield).
+  Solution: BookingSystemAI.sln with clean architecture:
+    - BookingSystemAI.Domain (entities)
+    - BookingSystemAI.Application (IUserService, DTOs, abstractions)
+    - BookingSystemAI.Infrastructure (EF, Identity adapters, JWT impl)
+    - BookingSystemAI.Api (thin endpoints, Program.cs)
+  Stack: .NET 9, ASP.NET Core minimal APIs, Microsoft.AspNetCore.OpenApi.
+  Structure: Business logic in Application services; never inject UserManager/DbContext in endpoints; wrap framework types in Infrastructure adapters.
+  API: RESTful JSON, minimal routing. OpenAPI via Microsoft.AspNetCore.OpenApi; API docs UI via Scalar at /scalar (Development only).
+  Conventions: PascalCase public members, camelCase locals, async/await for I/O, DI for services, no obvious inline comments.
+  Testing (when added): xUnit, Moq, Shouldly; test names MethodName_ShouldDoSomething_WhenSomethingHappens.
+  Commands: run dotnet commands one at a time (no && chaining).
+  Database: PostgreSQL 16 via Podman/Docker Compose (`compose.yaml`); start with `podman compose up -d`.
+  Local URLs: https://localhost:7262, http://localhost:5070.
+
+rules:
+  proposal:
+    - State problem, scope, non-goals, and success criteria for booking-domain features.
+    - Call out API surface changes (routes, DTOs, status codes).
+  specs:
+    - Use Given/When/Then for scenarios; include error and validation cases.
+  design:
+    - Prefer minimal-API patterns consistent with Program.cs unless complexity warrants controllers.
+    - Note persistence, auth, and concurrency only when in scope.
+  tasks:
+    - "Order tasks: models/DTOs → services → endpoints → config → tests."
+    - "Keep tasks small enough to verify with dotnet build and manual/API checks."

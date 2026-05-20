@@ -1,0 +1,10 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.env
+booking-system-ui/node_modules/
+booking-system-ui/dist/
+.cursor/
+.idea/

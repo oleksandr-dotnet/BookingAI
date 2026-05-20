@@ -1,0 +1,99 @@
+@BookingSystemAI_HostAddress = http://localhost:5070
+@hostEmail = host@example.com
+@clientEmail = client@example.com
+@password = Password1
+
+### Register Host
+POST {{BookingSystemAI_HostAddress}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{hostEmail}}",
+  "password": "{{password}}",
+  "role": "Host"
+}
+
+### Register Client
+POST {{BookingSystemAI_HostAddress}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{clientEmail}}",
+  "password": "{{password}}",
+  "role": "Client"
+}
+
+### Login Host
+# @name hostLogin
+POST {{BookingSystemAI_HostAddress}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{hostEmail}}",
+  "password": "{{password}}"
+}
+
+### Login Client
+# @name clientLogin
+POST {{BookingSystemAI_HostAddress}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{clientEmail}}",
+  "password": "{{password}}"
+}
+
+### List apartments (public)
+GET {{BookingSystemAI_HostAddress}}/apartments
+Accept: application/json
+
+### List apartments with availability window
+GET {{BookingSystemAI_HostAddress}}/apartments?from=2026-06-01T00:00:00Z&to=2026-06-07T00:00:00Z&availableOnly=true
+Accept: application/json
+
+### Create apartment (Host)
+POST {{BookingSystemAI_HostAddress}}/host/apartments
+Authorization: Bearer {{hostLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Studio A",
+  "description": "Downtown studio"
+}
+
+### List my apartments (Host)
+GET {{BookingSystemAI_HostAddress}}/host/apartments
+Authorization: Bearer {{hostLogin.response.body.$.accessToken}}
+Accept: application/json
+
+### Create booking (Client) — set apartmentId from host list/create response
+POST {{BookingSystemAI_HostAddress}}/bookings
+Authorization: Bearer {{clientLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "apartmentId": "00000000-0000-0000-0000-000000000001",
+  "start": "2026-06-10T14:00:00Z",
+  "end": "2026-06-12T10:00:00Z"
+}
+
+### List my bookings (Client)
+GET {{BookingSystemAI_HostAddress}}/bookings
+Authorization: Bearer {{clientLogin.response.body.$.accessToken}}
+Accept: application/json
+
+### Host calling bookings (expect 403)
+POST {{BookingSystemAI_HostAddress}}/bookings
+Authorization: Bearer {{hostLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "apartmentId": "00000000-0000-0000-0000-000000000001",
+  "start": "2026-06-10T14:00:00Z",
+  "end": "2026-06-12T10:00:00Z"
+}
+
+### Weather forecast (requires bearer token)
+GET {{BookingSystemAI_HostAddress}}/weatherforecast
+Authorization: Bearer {{clientLogin.response.body.$.accessToken}}
+Accept: application/json

@@ -1,0 +1,89 @@
+using System.Text;
+using BookingSystemAI.Application;
+using BookingSystemAI.Application.Abstractions;
+using BookingSystemAI.Infrastructure.Data;
+using BookingSystemAI.Infrastructure.Identity;
+using BookingSystemAI.Infrastructure.Options;
+using BookingSystemAI.Infrastructure.CompanyImport;
+using BookingSystemAI.Infrastructure.Repositories;
+using BookingSystemAI.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+
+namespace BookingSystemAI.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+            ?? throw new InvalidOperationException("Jwt configuration section is required.");
+
+        if (string.IsNullOrWhiteSpace(jwtOptions.Key))
+            throw new InvalidOperationException("Jwt:Key must be configured.");
+
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured.");
+
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionString));
+
+        services
+            .AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequiredLength = 6;
+                options.Password.RequireNonAlphanumeric = false;
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
+
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key))
+                };
+            });
+
+        services.AddAuthorizationBuilder()
+            .AddPolicy(ApplicationRoles.Host, policy => policy.RequireRole(ApplicationRoles.Host))
+            .AddPolicy(ApplicationRoles.Client, policy => policy.RequireRole(ApplicationRoles.Client));
+        services.AddScoped<IIdentityUserManager, IdentityUserManagerAdapter>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IApartmentRepository, ApartmentRepository>();
+        services.AddScoped<IBookingRepository, BookingRepository>();
+        services.AddScoped<IJsonExportReader, JsonExportReader>();
+        services.AddScoped<IMigrationTransactor, MigrationTransactor>();
+        services.AddScoped<IExternalEntityLookup, ExternalEntityLookup>();
+        services.AddScoped<IMigratedApartmentWriter, MigratedApartmentWriter>();
+
+        return services;
+    }
+
+    public static async Task MigrateDatabaseAsync(this IServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Database.MigrateAsync();
+        await IdentityRoleSeeder.SeedAsync(services);
+    }
+}
