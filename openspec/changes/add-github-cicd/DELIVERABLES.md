@@ -4,8 +4,18 @@ Complete these steps after merging the workflow. Replace `<DOCKERHUB_USERNAME>` 
 
 ## 1. GitHub repository
 
-- [ ] Push this repository to GitHub (fix `git safe.directory` locally if needed).
-- [ ] Ensure default branch is `main`.
+Remote: https://github.com/oleksandr-dotnet/BookingAI.git (branch `main`)
+
+- [x] Local commit and `origin` remote configured (agent could not push — Git credential is `sawabond`, not `oleksandr-dotnet`)
+- [ ] **You:** push from your machine (see commands below)
+- [ ] Ensure default branch is `main` on GitHub
+
+```powershell
+cd C:\Users\OleksandrBondarenko\RiderProjects\BookingSystemAI
+git -c safe.directory=C:/Users/OleksandrBondarenko/RiderProjects/BookingSystemAI push -u origin main
+```
+
+If push is denied, sign in as `oleksandr-dotnet` (Git Credential Manager, `gh auth login`, or SSH remote).
 
 ## 2. Docker Hub
 
