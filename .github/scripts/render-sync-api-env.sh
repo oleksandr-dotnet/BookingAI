@@ -14,7 +14,8 @@ source "${SCRIPT_DIR}/render-put-env.sh"
 put_env "${RENDER_API_SERVICE_ID}" "ASPNETCORE_ENVIRONMENT" "Staging"
 put_env "${RENDER_API_SERVICE_ID}" "ConnectionStrings__DefaultConnection" "${NEON_CONNECTION_STRING}"
 put_env "${RENDER_API_SERVICE_ID}" "Jwt__Key" "${JWT_KEY}"
-put_env "${RENDER_API_SERVICE_ID}" "Cors__AllowedOrigins" "${TEST_UI_URL}"
+put_env "${RENDER_API_SERVICE_ID}" "Cors__AllowedOrigins" "${TEST_UI_URL%/}"
+put_env "${RENDER_API_SERVICE_ID}" "TEST_UI_URL" "${TEST_UI_URL%/}"
 
 if [[ -n "${ADMIN_EMAIL:-}" ]]; then
   put_env "${RENDER_API_SERVICE_ID}" "Admin__Email" "${ADMIN_EMAIL}"
