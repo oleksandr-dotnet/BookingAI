@@ -11,3 +11,7 @@ Booking system API (.NET 9, clean architecture, PostgreSQL, JWT).
 ## CI/CD
 
 See [docs/ci.md](docs/ci.md) for GitHub Actions, Docker Hub image, test reports, and required secrets.
+
+## Free test deployment
+
+See [docs/deployment.md](docs/deployment.md) for hosting on Render + Neon ($0 tiers). Deploy via **Actions → Deploy test environment** (manual workflow).

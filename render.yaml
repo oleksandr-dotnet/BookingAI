@@ -1,0 +1,31 @@
+# Render Blueprint — API + UI (PostgreSQL is on Neon; create DB there first).
+# Ongoing deploys: GitHub Actions workflow deploy-test.yml (not dashboard manual deploy).
+# See docs/deployment.md for secrets and one-time setup.
+
+services:
+  - type: web
+    name: bookingsystemai-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Staging
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Key
+        generateValue: true
+      - key: Cors__AllowedOrigins
+        sync: false
+
+  - type: web
+    name: booking-system-ui
+    runtime: static
+    rootDir: booking-system-ui
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        sync: false

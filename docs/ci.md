@@ -45,7 +45,15 @@ docker run -p 8080:8080 \
   docker.io/<DOCKERHUB_USERNAME>/bookingsystemai-api:latest
 ```
 
-Migrations run automatically only in `Development` and `Testing` environments. For production images, apply EF migrations separately (e.g. Migrator job) before or during deploy.
+Migrations run automatically in `Development`, `Testing`, and `Staging` (hosted test deploy on Render). For other production environments, apply EF migrations separately (e.g. Migrator job) before or during deploy.
+
+## Deploy test environment (manual)
+
+Workflow: [`.github/workflows/deploy-test.yml`](../.github/workflows/deploy-test.yml)
+
+**Actions** → **Deploy test environment** → **Run workflow**
+
+Syncs GitHub secrets to Render, triggers API/UI deploys, and waits for `/health`. One-time setup and secrets: [docs/deployment.md](deployment.md).
 
 ## Local verification
 

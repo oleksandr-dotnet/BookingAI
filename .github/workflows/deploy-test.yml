@@ -1,0 +1,101 @@
+name: Deploy test environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      sync_environment:
+        description: Sync GitHub secrets to Render env vars before deploy
+        type: boolean
+        default: true
+      deploy_api:
+        description: Deploy API (Docker web service)
+        type: boolean
+        default: true
+      deploy_ui:
+        description: Deploy UI (static site)
+        type: boolean
+        default: true
+      wait_for_health:
+        description: Poll API /health until ready (after API deploy)
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required secrets
+        run: |
+          missing=0
+          for name in RENDER_API_KEY RENDER_API_SERVICE_ID RENDER_UI_SERVICE_ID NEON_CONNECTION_STRING JWT_KEY TEST_API_URL TEST_UI_URL; do
+            case "$name" in
+              RENDER_API_KEY) val='${{ secrets.RENDER_API_KEY }}' ;;
+              RENDER_API_SERVICE_ID) val='${{ secrets.RENDER_API_SERVICE_ID }}' ;;
+              RENDER_UI_SERVICE_ID) val='${{ secrets.RENDER_UI_SERVICE_ID }}' ;;
+              NEON_CONNECTION_STRING) val='${{ secrets.NEON_CONNECTION_STRING }}' ;;
+              JWT_KEY) val='${{ secrets.JWT_KEY }}' ;;
+              TEST_API_URL) val='${{ secrets.TEST_API_URL }}' ;;
+              TEST_UI_URL) val='${{ secrets.TEST_UI_URL }}' ;;
+            esac
+            if [ -z "$val" ]; then
+              echo "::error::Missing secret $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Sync API env vars on Render
+        if: inputs.sync_environment && inputs.deploy_api
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_API_SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
+          NEON_CONNECTION_STRING: ${{ secrets.NEON_CONNECTION_STRING }}
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          TEST_UI_URL: ${{ secrets.TEST_UI_URL }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: bash .github/scripts/render-sync-api-env.sh
+
+      - name: Sync UI env vars on Render
+        if: inputs.sync_environment && inputs.deploy_ui
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_UI_SERVICE_ID: ${{ secrets.RENDER_UI_SERVICE_ID }}
+          TEST_API_URL: ${{ secrets.TEST_API_URL }}
+        run: bash .github/scripts/render-sync-ui-env.sh
+
+      - name: Deploy API on Render
+        if: inputs.deploy_api
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: bash .github/scripts/render-trigger-deploy.sh "${{ secrets.RENDER_API_SERVICE_ID }}"
+
+      - name: Deploy UI on Render
+        if: inputs.deploy_ui
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: bash .github/scripts/render-trigger-deploy.sh "${{ secrets.RENDER_UI_SERVICE_ID }}"
+
+      - name: Wait for API health
+        if: inputs.wait_for_health && inputs.deploy_api
+        env:
+          TEST_API_URL: ${{ secrets.TEST_API_URL }}
+        run: bash .github/scripts/wait-for-api-health.sh
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## Deploy test environment" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Input | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| sync_environment | ${{ inputs.sync_environment }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| deploy_api | ${{ inputs.deploy_api }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| deploy_ui | ${{ inputs.deploy_ui }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| wait_for_health | ${{ inputs.wait_for_health }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Open \`TEST_API_URL\` / \`TEST_UI_URL\` repository secrets for service URLs." >> "$GITHUB_STEP_SUMMARY"

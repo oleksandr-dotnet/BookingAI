@@ -15,6 +15,16 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173")
             .AllowAnyHeader()
             .AllowAnyMethod());
+
+    var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"];
+    if (!string.IsNullOrWhiteSpace(allowedOrigins))
+    {
+        var origins = allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        options.AddPolicy("Deployed", policy =>
+            policy.WithOrigins(origins)
+                .AllowAnyHeader()
+                .AllowAnyMethod());
+    }
 });
 builder.Services.AddOpenApi(options =>
 {
@@ -24,7 +34,9 @@ builder.Services.AddOpenApi(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+if (app.Environment.IsDevelopment()
+    || app.Environment.IsEnvironment("Testing")
+    || app.Environment.IsStaging())
 {
     await app.Services.MigrateDatabaseAsync();
     if (app.Environment.IsDevelopment())
@@ -44,12 +56,17 @@ if (app.Environment.IsDevelopment())
     app.UseCors("Development");
     app.MapGet("/", () => Results.Redirect("http://127.0.0.1:5173"));
 }
+else if (app.Environment.IsStaging() && !string.IsNullOrWhiteSpace(app.Configuration["Cors:AllowedOrigins"]))
+{
+    app.UseCors("Deployed");
+}
 
-if (!app.Environment.IsEnvironment("Testing"))
+if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsStaging())
     app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapApartmentEndpoints();
 app.MapHostApartmentEndpoints();
