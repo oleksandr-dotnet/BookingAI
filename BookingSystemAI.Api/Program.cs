@@ -12,7 +12,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Development", policy =>
-        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173")
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
@@ -40,7 +40,10 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 }
 
 if (app.Environment.IsDevelopment())
+{
     app.UseCors("Development");
+    app.MapGet("/", () => Results.Redirect("http://127.0.0.1:5173"));
+}
 
 if (!app.Environment.IsEnvironment("Testing"))
     app.UseHttpsRedirection();
