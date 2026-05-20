@@ -28,8 +28,9 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(jwtOptions.Key))
             throw new InvalidOperationException("Jwt:Key must be configured.");
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured.");
+        var connectionString = ConnectionStringNormalizer.Normalize(
+            configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured."));
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString));

@@ -31,7 +31,7 @@ The workflow will:
 | `RENDER_API_KEY` | From [Render Account → API Keys](https://dashboard.render.com/u/settings#api-keys) |
 | `RENDER_API_SERVICE_ID` | Service ID (`srv-...`) from API service URL or `GET /v1/services` |
 | `RENDER_UI_SERVICE_ID` | Static site service ID (`srv-...`) |
-| `NEON_CONNECTION_STRING` | Neon pooled connection string (`SSL Mode=Require`) |
+| `NEON_CONNECTION_STRING` | Neon connection string — **URI** (`postgresql://...?sslmode=require`) or **.NET** form below |
 | `JWT_KEY` | Random 32+ characters (signing key; rotate invalidates tokens) |
 | `TEST_API_URL` | `https://bookingsystemai-api.onrender.com` (no trailing slash) |
 | `TEST_UI_URL` | `https://booking-system-ui.onrender.com` (exact CORS origin) |
@@ -57,8 +57,20 @@ Do this once per repository (or when recreating services).
 ### 1. PostgreSQL on Neon
 
 1. Create a project at [neon.tech](https://neon.tech).
-2. Copy the **pooled** connection string.
+2. Copy the **pooled** connection string from Neon (**Connection string** tab).
 3. Save it as GitHub secret `NEON_CONNECTION_STRING`.
+
+Accepted formats (API normalizes `postgresql://` URIs automatically):
+
+```text
+postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require
+```
+
+```text
+Host=ep-xxx.region.aws.neon.tech;Port=5432;Database=neondb;Username=user;Password=password;SSL Mode=Require
+```
+
+Use the full URI including `=require`. A truncated `?sslmode` without a value will fail.
 
 ### 2. Render services
 
@@ -115,7 +127,7 @@ Deploy UI only: turn off `deploy_api` and `wait_for_health`. Config-only sync: e
 | `404` on deploy | Wrong `RENDER_*_SERVICE_ID` |
 | CORS errors in browser | `TEST_UI_URL` must match static site URL exactly |
 | Health check timeout | Free tier cold start; re-run workflow or wait longer |
-| Startup fails on DB | Check `NEON_CONNECTION_STRING` and SSL |
+| Startup fails on DB / `Couldn't set postgresql://...` | Use full Neon URI with `?sslmode=require` or semicolon .NET string; redeploy after fixing `NEON_CONNECTION_STRING` |
 
 ## Manual Render dashboard deploy
 
