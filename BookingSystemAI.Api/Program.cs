@@ -56,7 +56,8 @@ if (app.Environment.IsDevelopment())
     app.UseCors("Development");
     app.MapGet("/", () => Results.Redirect("http://127.0.0.1:5173"));
 }
-else if (app.Environment.IsStaging() && !string.IsNullOrWhiteSpace(app.Configuration["Cors:AllowedOrigins"]))
+else if (!app.Environment.IsEnvironment("Testing")
+         && !string.IsNullOrWhiteSpace(app.Configuration["Cors:AllowedOrigins"]))
 {
     app.UseCors("Deployed");
 }

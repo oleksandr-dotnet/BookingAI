@@ -125,7 +125,8 @@ Deploy UI only: turn off `deploy_api` and `wait_for_health`. Config-only sync: e
 | Missing secret error at start | Add all required secrets in GitHub |
 | `401` from Render API | Regenerate `RENDER_API_KEY` |
 | `404` on deploy | Wrong `RENDER_*_SERVICE_ID` |
-| CORS errors in browser | `TEST_UI_URL` must match static site URL exactly |
+| CORS / OPTIONS 404 on `/auth/*` | Set `Cors__AllowedOrigins` on API to exact UI origin (`https://...onrender.com`, no trailing slash). Re-run deploy workflow. `ASPNETCORE_ENVIRONMENT` can be `Staging` or `Production` if CORS var is set. |
+| CORS errors in browser | `TEST_UI_URL` must match static site URL exactly (scheme + host) |
 | Health check timeout | Free tier cold start; re-run workflow or wait longer |
 | Startup fails on DB / `Couldn't set postgresql://...` | Use full Neon URI with `?sslmode=require` or semicolon .NET string; redeploy after fixing `NEON_CONNECTION_STRING` |
 
