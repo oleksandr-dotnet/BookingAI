@@ -20,7 +20,7 @@
 
 ## 4. Verification and deliverables
 
-- [ ] 4.1 Initialize git remote / push to GitHub if not already done
-- [ ] 4.2 Configure Docker Hub repository and GitHub secrets; run workflow to green on `main`
-- [ ] 4.3 Capture screenshots: workflow run, test report tab, Docker Hub tags page → `openspec/changes/add-github-cicd/evidence/`
-- [ ] 4.4 Record `docker pull docker.io/<username>/bookingsystemai-api:latest` link in PR or change notes
+- [x] 4.1 Initialize git remote / push to GitHub if not already done
+- [x] 4.2 Configure Docker Hub repository and GitHub secrets; run workflow to green on `main`
+- [x] 4.3 Capture screenshots: workflow run, test report tab, Docker Hub tags page → `openspec/changes/add-github-cicd/evidence/`
+- [x] 4.4 Record `docker pull docker.io/<username>/bookingsystemai-api:latest` link in PR or change notes
