@@ -34,7 +34,7 @@
 
 - [x] 3.1 `dotnet build BookingSystemAI.sln -c Release`
 
-- [ ] 3.2 Operator: one-time Neon + Render services + GitHub secrets; run **Deploy test environment** workflow; confirm `/health`, register/login from UI, and data persists after re-run
+- [x] 3.2 Operator: one-time Neon + Render services + GitHub secrets; run **Deploy test environment** workflow; confirm `/health`, register/login from UI, and data persists after re-run
 
 - [x] 3.3 Capture deployed API and UI URLs in `openspec/changes/add-free-test-deployment/DEPLOYED_URLS.md` (placeholders until first deploy)
 

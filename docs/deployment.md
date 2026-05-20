@@ -111,6 +111,8 @@ Create two services from this repo (or apply [`render.yaml`](../render.yaml) as 
 
 Note the public URLs and service IDs for GitHub secrets `TEST_API_URL`, `TEST_UI_URL`, `RENDER_API_SERVICE_ID`, `RENDER_UI_SERVICE_ID`.
 
+**UI build env:** `VITE_API_URL` must be your **actual** API URL (e.g. `https://bookingai-api.onrender.com`). The Docker/CI name `bookingsystemai-api` is unrelated — if the UI calls the wrong host, OPTIONS returns 404 even when the correct API passes curl tests.
+
 Env vars on Render can stay empty initially; the workflow syncs them from GitHub on each deploy when **sync_environment** is enabled.
 
 ### 3. First deploy
@@ -143,8 +145,9 @@ Deploy UI only: turn off `deploy_api` and `wait_for_health`. Config-only sync: e
 | Missing secret error at start | Add all required secrets in GitHub |
 | `401` from Render API | Regenerate `RENDER_API_KEY` |
 | `404` on deploy | Wrong `RENDER_*_SERVICE_ID` |
-| CORS / OPTIONS 404 on `/auth/*` | On **API** service set `Cors__AllowedOrigins` **or** `TEST_UI_URL` to exact UI origin (`https://your-ui.onrender.com`, no trailing slash). Redeploy API. Run **Deploy test environment** with sync enabled. |
-| CORS errors in browser | `TEST_UI_URL` must match static site URL exactly (scheme + host) |
+| CORS / OPTIONS 404 on `/auth/*` | **Wrong API host in UI:** DevTools must show `bookingai-api.onrender.com`, not `bookingsystemai-api`. Fix `VITE_API_URL` on static site and **redeploy UI** (see below). |
+| OPTIONS 404 but curl to correct API returns 204 | UI built with old `VITE_API_URL`. Update Render UI env + GitHub `TEST_API_URL`, run deploy with **deploy_ui** enabled. |
+| CORS errors in browser | `TEST_UI_URL` on API must match UI origin; `VITE_API_URL` on UI must match API origin |
 | Health check timeout in Actions | `TEST_API_URL` must match real API host (`bookingai-api` vs `bookingsystemai-api` are different). Override in workflow run: **test_api_url** = `https://bookingai-api.onrender.com` |
 | Startup fails on DB / `Couldn't set postgresql://...` | Use full Neon URI with `?sslmode=require` or semicolon .NET string; redeploy after fixing `NEON_CONNECTION_STRING` |
 
