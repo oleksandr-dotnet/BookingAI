@@ -19,6 +19,10 @@ on:
         description: Poll API /health until ready (after API deploy)
         type: boolean
         default: true
+      test_api_url:
+        description: Override API base URL for health check (optional; defaults to TEST_API_URL secret)
+        type: string
+        required: false
 
 concurrency:
   group: deploy-test
@@ -86,7 +90,7 @@ jobs:
       - name: Wait for API health
         if: inputs.wait_for_health && inputs.deploy_api
         env:
-          TEST_API_URL: ${{ secrets.TEST_API_URL }}
+          TEST_API_URL: ${{ inputs.test_api_url != '' && inputs.test_api_url || secrets.TEST_API_URL }}
         run: bash .github/scripts/wait-for-api-health.sh
 
       - name: Deployment summary

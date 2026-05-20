@@ -33,7 +33,7 @@ The workflow will:
 | `RENDER_UI_SERVICE_ID` | Static site service ID (`srv-...`) |
 | `NEON_CONNECTION_STRING` | Neon connection string — **URI** (`postgresql://...?sslmode=require`) or **.NET** form below |
 | `JWT_KEY` | Random 32+ characters (signing key; rotate invalidates tokens) |
-| `TEST_API_URL` | `https://bookingsystemai-api.onrender.com` (no trailing slash) |
+| `TEST_API_URL` | Live API URL, e.g. `https://bookingai-api.onrender.com` (no trailing slash; must match Render service URL) |
 | `TEST_UI_URL` | `https://booking-system-ui.onrender.com` (exact CORS origin) |
 
 Optional:
@@ -127,7 +127,7 @@ Deploy UI only: turn off `deploy_api` and `wait_for_health`. Config-only sync: e
 | `404` on deploy | Wrong `RENDER_*_SERVICE_ID` |
 | CORS / OPTIONS 404 on `/auth/*` | On **API** service set `Cors__AllowedOrigins` **or** `TEST_UI_URL` to exact UI origin (`https://your-ui.onrender.com`, no trailing slash). Redeploy API. Run **Deploy test environment** with sync enabled. |
 | CORS errors in browser | `TEST_UI_URL` must match static site URL exactly (scheme + host) |
-| Health check timeout | Free tier cold start; re-run workflow or wait longer |
+| Health check timeout in Actions | `TEST_API_URL` must match real API host (`bookingai-api` vs `bookingsystemai-api` are different). Override in workflow run: **test_api_url** = `https://bookingai-api.onrender.com` |
 | Startup fails on DB / `Couldn't set postgresql://...` | Use full Neon URI with `?sslmode=require` or semicolon .NET string; redeploy after fixing `NEON_CONNECTION_STRING` |
 
 ## Manual Render dashboard deploy
