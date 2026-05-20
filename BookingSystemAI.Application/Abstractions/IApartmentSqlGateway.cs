@@ -32,4 +32,5 @@ public sealed record ApartmentUpsertRow(
     decimal PricePerNight,
     int GuestCount,
     string[] Amenities,
-    string MetadataJson);
+    string MetadataJson,
+    int Version);

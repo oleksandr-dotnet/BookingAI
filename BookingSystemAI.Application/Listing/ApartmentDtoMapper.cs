@@ -15,6 +15,7 @@ public static class ApartmentDtoMapper
             apartment.PricePerNight,
             apartment.GuestCount,
             AmenityMapper.ToNames(apartment.Amenities),
+            apartment.Version,
             isAvailable);
 
     public static ApartmentResponseDto ToResponse(Apartment apartment) =>
@@ -25,6 +26,7 @@ public static class ApartmentDtoMapper
             apartment.PricePerNight,
             apartment.GuestCount,
             AmenityMapper.ToNames(apartment.Amenities),
+            apartment.Version,
             ParseMetadata(apartment.MetadataJson));
 
     public static ApartmentResponseDto ToResponse(ApartmentUpsertRow row) =>
@@ -35,6 +37,7 @@ public static class ApartmentDtoMapper
             row.PricePerNight,
             row.GuestCount,
             row.Amenities,
+            row.Version,
             ParseMetadata(row.MetadataJson));
 
     private static JsonElement? ParseMetadata(string metadataJson)

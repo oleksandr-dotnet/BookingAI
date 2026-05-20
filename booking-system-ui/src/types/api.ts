@@ -36,6 +36,7 @@ export interface ApartmentListItem {
   pricePerNight: number
   guestCount: number
   amenities: string[]
+  version: number
   isAvailable?: boolean | null
 }
 
@@ -46,6 +47,7 @@ export interface ApartmentResponse {
   pricePerNight: number
   guestCount: number
   amenities: string[]
+  version: number
   metadata?: Record<string, unknown> | null
 }
 
@@ -58,8 +60,19 @@ export interface CreateApartmentRequest {
   metadata?: Record<string, unknown> | null
 }
 
+export interface UpdateApartmentRequest {
+  name: string
+  description: string
+  pricePerNight: number
+  guestCount: number
+  amenities: string[]
+  version: number
+  metadata?: Record<string, unknown> | null
+}
+
 export interface CreateBookingRequest {
   apartmentId: string
+  apartmentVersion: number
   start: string
   end: string
 }
@@ -113,11 +126,18 @@ export interface ValidationProblemDetails {
 export class ApiError extends Error {
   readonly status: number
   readonly validationErrors?: Record<string, string[]>
+  readonly code?: string
 
-  constructor(message: string, status: number, validationErrors?: Record<string, string[]>) {
+  constructor(
+    message: string,
+    status: number,
+    validationErrors?: Record<string, string[]>,
+    code?: string,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.validationErrors = validationErrors
+    this.code = code
   }
 }

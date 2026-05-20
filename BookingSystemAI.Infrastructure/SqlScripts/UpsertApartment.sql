@@ -37,4 +37,5 @@ RETURNING
     "PricePerNight",
     "GuestCount",
     "Amenities",
-    "MetadataJson";
+    "MetadataJson",
+    "Version";

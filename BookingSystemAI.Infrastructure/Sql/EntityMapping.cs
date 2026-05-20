@@ -18,7 +18,8 @@ internal static class EntityMapping
             Amenities = MapAmenities(record.Amenities),
             MetadataJson = record.MetadataJson,
             SourceCompanyId = record.SourceCompanyId,
-            ExternalId = record.ExternalId
+            ExternalId = record.ExternalId,
+            Version = record.Version
         };
 
     public static Booking MapToDomain(BookingRecord record) =>

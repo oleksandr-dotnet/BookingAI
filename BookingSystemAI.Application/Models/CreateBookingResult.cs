@@ -7,7 +7,8 @@ public enum CreateBookingFailureReason
     None,
     Validation,
     NotFound,
-    Conflict
+    Conflict,
+    ApartmentVersionConflict
 }
 
 public sealed class CreateBookingResult
@@ -28,4 +29,7 @@ public sealed class CreateBookingResult
 
     public static CreateBookingResult Conflict() =>
         new() { Succeeded = false, FailureReason = CreateBookingFailureReason.Conflict };
+
+    public static CreateBookingResult ApartmentVersionConflict() =>
+        new() { Succeeded = false, FailureReason = CreateBookingFailureReason.ApartmentVersionConflict };
 }

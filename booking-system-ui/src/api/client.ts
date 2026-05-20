@@ -37,12 +37,16 @@ export async function apiFetch<T>(
 
   const contentType = response.headers.get('content-type') ?? ''
   if (contentType.includes('application/json') || contentType.includes('application/problem+json')) {
-    const problem = (await response.json()) as ValidationProblemDetails
-    const errors = problem.errors
+    const body = (await response.json()) as ValidationProblemDetails & {
+      code?: string
+      message?: string
+    }
+    const errors = body.errors
     const message =
-      problem.title ??
+      body.message ??
+      body.title ??
       (errors ? Object.values(errors).flat().join(' ') : `Request failed (${response.status})`)
-    throw new ApiError(message, response.status, errors)
+    throw new ApiError(message, response.status, errors, body.code)
   }
 
   throw new ApiError(`Request failed (${response.status})`, response.status)

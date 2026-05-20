@@ -32,6 +32,7 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
         var token = await RegisterAndLoginAsync(ApplicationRoles.Host);
         var request = new CreateBookingRequestDto(
             Guid.NewGuid(),
+            1,
             DateTimeOffset.UtcNow.AddDays(1),
             DateTimeOffset.UtcNow.AddDays(2));
 
@@ -74,7 +75,7 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
         var clientToken = await RegisterAndLoginAsync(ApplicationRoles.Client);
         var start = DateTimeOffset.UtcNow.AddDays(10);
         var end = start.AddDays(2);
-        var bookingRequest = new CreateBookingRequestDto(apartment!.Id, start, end);
+        var bookingRequest = new CreateBookingRequestDto(apartment!.Id, apartment.Version, start, end);
 
         var bookResponse = await SendAuthorizedAsync(HttpMethod.Post, "/bookings", clientToken, bookingRequest);
         bookResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -87,6 +88,38 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
         bookings[0].PricePerNight.ShouldBe(100);
         bookings[0].GuestCount.ShouldBe(2);
         bookings[0].Amenities.ShouldBe(["Microwave", "Shower"]);
+    }
+
+    [Fact]
+    public async Task CreateBooking_ShouldReturnConflict_WhenApartmentVersionIsStale()
+    {
+        var hostToken = await RegisterAndLoginAsync(ApplicationRoles.Host);
+        var createApartment = await SendAuthorizedAsync(
+            HttpMethod.Post,
+            "/host/apartments",
+            hostToken,
+            new CreateApartmentRequestDto("Versioned Flat", "Test stale booking", 90, 2, ["Shower"]));
+        var apartment = await createApartment.Content.ReadFromJsonAsync<ApartmentResponseDto>();
+
+        var updateResponse = await SendAuthorizedAsync(
+            HttpMethod.Put,
+            $"/host/apartments/{apartment!.Id}",
+            hostToken,
+            new UpdateApartmentRequestDto("Updated Flat", "New description", 120, 3, ["LargeBed", "Shower"], apartment.Version));
+        updateResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var clientToken = await RegisterAndLoginAsync(ApplicationRoles.Client);
+        var start = DateTimeOffset.UtcNow.AddDays(15);
+        var end = start.AddDays(2);
+        var bookResponse = await SendAuthorizedAsync(
+            HttpMethod.Post,
+            "/bookings",
+            clientToken,
+            new CreateBookingRequestDto(apartment.Id, apartment.Version, start, end));
+
+        bookResponse.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var body = await bookResponse.Content.ReadAsStringAsync();
+        body.ShouldContain("apartmentUpdatedByHost");
     }
 
     [Fact]

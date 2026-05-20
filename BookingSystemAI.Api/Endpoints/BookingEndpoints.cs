@@ -21,7 +21,7 @@ public static class BookingEndpoints
             {
                 operation.Summary = "Create booking (Client)";
                 operation.Description =
-                    "Books an apartment for [start, end) when available. Returns 409 on overlap, 403 for Host role.";
+                    "Books an apartment for [start, end) when available. Requires apartmentVersion from catalog. Returns 409 on overlap or stale version, 403 for Host role.";
                 return operation;
             });
 
@@ -73,6 +73,12 @@ public static class BookingEndpoints
         {
             CreateBookingFailureReason.NotFound => Results.NotFound(),
             CreateBookingFailureReason.Conflict => Results.Conflict(),
+            CreateBookingFailureReason.ApartmentVersionConflict => Results.Conflict(new
+            {
+                code = "apartmentUpdatedByHost",
+                message =
+                    "This apartment was updated by the host. Review the current listing and create your booking again."
+            }),
             _ => Results.Created($"/bookings/{result.Response!.Id}", result.Response)
         };
     }

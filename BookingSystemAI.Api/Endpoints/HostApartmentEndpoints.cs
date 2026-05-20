@@ -33,6 +33,16 @@ public static class HostApartmentEndpoints
                 return operation;
             });
 
+        group.MapPut("/{id:guid}", UpdateApartment)
+            .WithName("UpdateHostApartment")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "Update apartment (Host)";
+                operation.Description =
+                    "Updates an owned apartment. Requires matching version; returns 409 when stale.";
+                return operation;
+            });
+
         group.MapPut("/upsert", UpsertApartment)
             .WithName("UpsertHostApartment")
             .WithOpenApi(operation =>
@@ -73,6 +83,21 @@ public static class HostApartmentEndpoints
         return Results.Ok(apartments);
     }
 
+    private static async Task<IResult> UpdateApartment(
+        Guid id,
+        UpdateApartmentRequestDto request,
+        ClaimsPrincipal user,
+        IHostApartmentService hostApartmentService,
+        CancellationToken cancellationToken)
+    {
+        var hostId = GetUserId(user);
+        if (hostId is null)
+            return Results.Unauthorized();
+
+        var result = await hostApartmentService.UpdateAsync(hostId, id, request, cancellationToken);
+        return MapUpdateResult(result);
+    }
+
     private static async Task<IResult> UpsertApartment(
         UpsertApartmentRequestDto request,
         ClaimsPrincipal user,
@@ -96,6 +121,19 @@ public static class HostApartmentEndpoints
             return Results.NotFound();
 
         return Results.Ok(result.Response);
+    }
+
+    private static IResult MapUpdateResult(UpdateApartmentResult result)
+    {
+        if (result.ValidationErrors is not null)
+            return Results.ValidationProblem(result.ValidationErrors);
+
+        return result.FailureReason switch
+        {
+            UpdateApartmentFailureReason.NotFound => Results.NotFound(),
+            UpdateApartmentFailureReason.Conflict => Results.Conflict(),
+            _ => Results.Ok(result.Response)
+        };
     }
 
     private static IResult MapCreateResult(CreateApartmentResult result)

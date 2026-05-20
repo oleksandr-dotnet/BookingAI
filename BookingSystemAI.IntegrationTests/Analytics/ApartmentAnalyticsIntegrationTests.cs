@@ -48,7 +48,7 @@ public class ApartmentAnalyticsIntegrationTests(IntegrationTestFixture fixture)
             HttpMethod.Post,
             "/bookings",
             clientToken,
-            new CreateBookingRequestDto(upserted.Id, start, end));
+            new CreateBookingRequestDto(upserted.Id, upserted.Version, start, end));
         bookResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
         var booking = await bookResponse.Content.ReadFromJsonAsync<BookingResponseDto>();
         booking!.PricePerNight.ShouldBe(150);

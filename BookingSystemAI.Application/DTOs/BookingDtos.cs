@@ -1,6 +1,6 @@
 namespace BookingSystemAI.Application.DTOs;
 
-public record CreateBookingRequestDto(Guid ApartmentId, DateTimeOffset Start, DateTimeOffset End);
+public record CreateBookingRequestDto(Guid ApartmentId, int ApartmentVersion, DateTimeOffset Start, DateTimeOffset End);
 
 public record BookingResponseDto(
     Guid Id,

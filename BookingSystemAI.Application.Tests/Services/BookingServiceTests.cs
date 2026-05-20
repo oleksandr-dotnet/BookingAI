@@ -26,6 +26,7 @@ public class BookingServiceTests
         var apartmentId = Guid.NewGuid();
         var request = new CreateBookingRequestDto(
             apartmentId,
+            1,
             DateTimeOffset.UtcNow.AddHours(1),
             DateTimeOffset.UtcNow.AddHours(2));
 
@@ -44,6 +45,7 @@ public class BookingServiceTests
         var apartmentId = Guid.NewGuid();
         var request = new CreateBookingRequestDto(
             apartmentId,
+            1,
             DateTimeOffset.UtcNow.AddDays(1),
             DateTimeOffset.UtcNow.AddDays(2));
 
@@ -67,10 +69,29 @@ public class BookingServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_ShouldReturnApartmentVersionConflict_WhenVersionIsStale()
+    {
+        var apartmentId = Guid.NewGuid();
+        var request = new CreateBookingRequestDto(
+            apartmentId,
+            1,
+            DateTimeOffset.UtcNow.AddDays(1),
+            DateTimeOffset.UtcNow.AddDays(2));
+
+        SetupApartment(apartmentId, version: 2);
+
+        var result = await _sut.CreateAsync("client-1", request);
+
+        result.Succeeded.ShouldBeFalse();
+        result.FailureReason.ShouldBe(CreateBookingFailureReason.ApartmentVersionConflict);
+    }
+
+    [Fact]
     public async Task CreateAsync_ShouldReturnValidationFailure_WhenEndIsBeforeStart()
     {
         var request = new CreateBookingRequestDto(
             Guid.NewGuid(),
+            1,
             DateTimeOffset.UtcNow.AddHours(2),
             DateTimeOffset.UtcNow.AddHours(1));
 
@@ -85,7 +106,8 @@ public class BookingServiceTests
         Guid apartmentId,
         decimal pricePerNight = 0,
         int guestCount = 1,
-        IReadOnlyList<Amenity>? amenities = null) =>
+        IReadOnlyList<Amenity>? amenities = null,
+        int version = 1) =>
         _apartmentRepository.Setup(r => r.GetByIdAsync(apartmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Apartment
             {
@@ -95,6 +117,7 @@ public class BookingServiceTests
                 Description = "Desc",
                 PricePerNight = pricePerNight,
                 GuestCount = guestCount,
-                Amenities = amenities ?? []
+                Amenities = amenities ?? [],
+                Version = version
             });
 }

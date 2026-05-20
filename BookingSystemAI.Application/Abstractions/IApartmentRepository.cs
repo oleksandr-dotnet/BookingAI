@@ -11,4 +11,13 @@ public interface IApartmentRepository
         CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddAsync(Apartment apartment, CancellationToken cancellationToken = default);
+    Task<ApartmentUpdateOutcome> TryUpdateAsync(Apartment apartment, int expectedVersion,
+        CancellationToken cancellationToken = default);
+}
+
+public enum ApartmentUpdateOutcome
+{
+    Success,
+    NotFound,
+    Conflict
 }

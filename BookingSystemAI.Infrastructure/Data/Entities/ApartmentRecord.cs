@@ -12,5 +12,6 @@ public sealed class ApartmentRecord
     public string MetadataJson { get; set; } = "{}";
     public Guid? SourceCompanyId { get; set; }
     public string? ExternalId { get; set; }
+    public int Version { get; set; } = 1;
     public ICollection<BookingRecord> Bookings { get; set; } = [];
 }

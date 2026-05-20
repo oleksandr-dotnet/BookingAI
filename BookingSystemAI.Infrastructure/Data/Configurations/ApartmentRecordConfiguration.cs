@@ -17,6 +17,7 @@ public sealed class ApartmentRecordConfiguration : IEntityTypeConfiguration<Apar
         builder.Property(a => a.GuestCount).IsRequired();
         builder.Property(a => a.Amenities).HasColumnType("text[]").IsRequired();
         builder.Property(a => a.MetadataJson).HasColumnType("jsonb").IsRequired().HasDefaultValueSql("'{}'::jsonb");
+        builder.Property(a => a.Version).IsRequired().HasDefaultValue(1);
         builder.Property(a => a.ExternalId).HasMaxLength(128);
         builder.HasIndex(a => a.HostId);
         builder.HasIndex(a => new { a.SourceCompanyId, a.ExternalId })

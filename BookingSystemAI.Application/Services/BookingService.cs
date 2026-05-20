@@ -20,6 +20,9 @@ public class BookingService(IApartmentRepository apartmentRepository, IBookingRe
         if (apartment is null)
             return CreateBookingResult.NotFound();
 
+        if (apartment.Version != request.ApartmentVersion)
+            return CreateBookingResult.ApartmentVersionConflict();
+
         var booking = new Booking
         {
             Id = Guid.NewGuid(),
@@ -52,6 +55,9 @@ public class BookingService(IApartmentRepository apartmentRepository, IBookingRe
 
         if (request.ApartmentId == Guid.Empty)
             errors["apartmentId"] = ["ApartmentId is required."];
+
+        if (request.ApartmentVersion < 1)
+            errors["apartmentVersion"] = ["ApartmentVersion is required."];
 
         if (request.End <= request.Start)
             errors["end"] = ["End must be after start."];

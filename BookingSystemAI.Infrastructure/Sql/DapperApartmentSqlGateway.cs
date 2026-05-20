@@ -40,7 +40,8 @@ public sealed class DapperApartmentSqlGateway(INpgsqlConnectionFactory connectio
                 row.PricePerNight,
                 row.GuestCount,
                 row.Amenities,
-                row.MetadataJson);
+                row.MetadataJson,
+                row.Version);
     }
 
     public async Task<BookingSummaryAnalyticsDto> GetBookingSummaryAsync(CancellationToken cancellationToken = default)

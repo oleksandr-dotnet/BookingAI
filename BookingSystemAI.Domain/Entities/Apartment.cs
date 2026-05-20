@@ -12,4 +12,5 @@ public sealed class Apartment
     public string MetadataJson { get; init; } = "{}";
     public Guid? SourceCompanyId { get; init; }
     public string? ExternalId { get; init; }
+    public int Version { get; init; } = 1;
 }

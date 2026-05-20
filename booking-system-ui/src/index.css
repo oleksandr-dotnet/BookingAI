@@ -437,6 +437,14 @@ code {
   flex: 1;
 }
 
+.apartment-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
 .badge {
   font-size: 0.7rem;
   font-weight: 600;
@@ -581,6 +589,10 @@ code {
   justify-content: center;
   padding: 1rem;
   z-index: 100;
+}
+
+.modal-wide {
+  max-width: 520px;
 }
 
 .modal {

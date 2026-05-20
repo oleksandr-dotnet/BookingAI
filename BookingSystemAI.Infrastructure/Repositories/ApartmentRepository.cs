@@ -59,8 +59,33 @@ public sealed class ApartmentRepository(ApplicationDbContext dbContext) : IApart
             Amenities = EntityMapping.MapAmenityNames(apartment.Amenities),
             MetadataJson = apartment.MetadataJson,
             SourceCompanyId = apartment.SourceCompanyId,
-            ExternalId = apartment.ExternalId
+            ExternalId = apartment.ExternalId,
+            Version = apartment.Version
         });
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ApartmentUpdateOutcome> TryUpdateAsync(Apartment apartment, int expectedVersion,
+        CancellationToken cancellationToken = default)
+    {
+        var record = await dbContext.Apartments
+            .FirstOrDefaultAsync(a => a.Id == apartment.Id && a.HostId == apartment.HostId, cancellationToken);
+
+        if (record is null)
+            return ApartmentUpdateOutcome.NotFound;
+
+        if (record.Version != expectedVersion)
+            return ApartmentUpdateOutcome.Conflict;
+
+        record.Name = apartment.Name;
+        record.Description = apartment.Description;
+        record.PricePerNight = apartment.PricePerNight;
+        record.GuestCount = apartment.GuestCount;
+        record.Amenities = EntityMapping.MapAmenityNames(apartment.Amenities);
+        record.MetadataJson = apartment.MetadataJson;
+        record.Version = expectedVersion + 1;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApartmentUpdateOutcome.Success;
     }
 }

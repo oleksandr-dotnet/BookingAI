@@ -9,6 +9,7 @@ internal sealed class ApartmentUpsertRowDto
     public int GuestCount { get; set; }
     public string[] Amenities { get; set; } = [];
     public required string MetadataJson { get; set; }
+    public int Version { get; set; }
 }
 
 internal sealed class BookingSummaryRowDto

@@ -10,4 +10,7 @@ public interface IHostApartmentService
 
     Task<IReadOnlyList<ApartmentResponseDto>> ListMineAsync(string hostId,
         CancellationToken cancellationToken = default);
+
+    Task<UpdateApartmentResult> UpdateAsync(string hostId, Guid apartmentId, UpdateApartmentRequestDto request,
+        CancellationToken cancellationToken = default);
 }

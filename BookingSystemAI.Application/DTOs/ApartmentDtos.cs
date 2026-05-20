@@ -9,6 +9,7 @@ public record ApartmentListItemDto(
     decimal PricePerNight,
     int GuestCount,
     IReadOnlyList<string> Amenities,
+    int Version,
     bool? IsAvailable = null);
 
 public record CreateApartmentRequestDto(
@@ -26,6 +27,16 @@ public record ApartmentResponseDto(
     decimal PricePerNight,
     int GuestCount,
     IReadOnlyList<string> Amenities,
+    int Version,
+    JsonElement? Metadata = null);
+
+public record UpdateApartmentRequestDto(
+    string Name,
+    string Description,
+    decimal PricePerNight,
+    int GuestCount,
+    IReadOnlyList<string> Amenities,
+    int Version,
     JsonElement? Metadata = null);
 
 public record UpsertApartmentRequestDto(

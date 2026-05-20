@@ -23,6 +23,7 @@ export function CatalogPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [bookingApartmentId, setBookingApartmentId] = useState<string | null>(null)
+  const [bookingApartmentVersion, setBookingApartmentVersion] = useState<number | null>(null)
   const [bookStart, setBookStart] = useState('')
   const [bookEnd, setBookEnd] = useState('')
   const [bookError, setBookError] = useState<string | null>(null)
@@ -54,6 +55,7 @@ export function CatalogPage() {
 
   const openBook = (apartment: ApartmentListItem) => {
     setBookingApartmentId(apartment.id)
+    setBookingApartmentVersion(apartment.version)
     setBookStart(from || toIsoLocalInput(new Date(Date.now() + 86400000)))
     setBookEnd(to || toIsoLocalInput(new Date(Date.now() + 86400000 * 3)))
     setBookError(null)
@@ -62,7 +64,7 @@ export function CatalogPage() {
 
   const handleBook = async (event: FormEvent) => {
     event.preventDefault()
-    if (!token || !bookingApartmentId) return
+    if (!token || !bookingApartmentId || bookingApartmentVersion === null) return
     setIsBooking(true)
     setBookError(null)
     setBookSuccess(null)
@@ -70,6 +72,7 @@ export function CatalogPage() {
       await createBooking(
         {
           apartmentId: bookingApartmentId,
+          apartmentVersion: bookingApartmentVersion,
           start: localInputToIso(bookStart),
           end: localInputToIso(bookEnd),
         },
@@ -77,11 +80,20 @@ export function CatalogPage() {
       )
       setBookSuccess('Booking created.')
       setBookingApartmentId(null)
+      setBookingApartmentVersion(null)
       await load()
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 409) setBookError('This apartment is not available for the selected dates.')
-        else setBookError(err.message)
+        if (err.code === 'apartmentUpdatedByHost') {
+          setBookError(
+            'This apartment was updated by the host. Refresh the list, review the listing, and book again.',
+          )
+          await load()
+        } else if (err.status === 409) {
+          setBookError('This apartment is not available for the selected dates.')
+        } else {
+          setBookError(err.message)
+        }
       } else {
         setBookError('Booking failed.')
       }
@@ -170,7 +182,14 @@ export function CatalogPage() {
       )}
 
       {bookingApartmentId && isClient && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setBookingApartmentId(null)}>
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            setBookingApartmentId(null)
+            setBookingApartmentVersion(null)
+          }}
+        >
           <div
             className="modal"
             role="dialog"
@@ -203,7 +222,14 @@ export function CatalogPage() {
                 />
               </label>
               <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setBookingApartmentId(null)}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setBookingApartmentId(null)
+                    setBookingApartmentVersion(null)
+                  }}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isBooking}>
