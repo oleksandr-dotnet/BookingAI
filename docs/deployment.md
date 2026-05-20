@@ -10,6 +10,24 @@ Host the API, React UI, and PostgreSQL on **$0** free tiers. **Deploy from GitHu
 
 Workflow file: [`.github/workflows/deploy-test.yml`](../.github/workflows/deploy-test.yml)
 
+## How CORS reaches the API
+
+```
+GitHub secret TEST_UI_URL
+        ↓  (deploy workflow: render-sync-api-env.sh)
+Render API env: Cors__AllowedOrigins  and  TEST_UI_URL
+        ↓  (.NET maps Cors__AllowedOrigins → Cors:AllowedOrigins)
+BookingSystemAI.Api reads configuration at startup
+        ↓
+Policy "Deployed" + UseCors + RequireCors on /auth, /apartments, …
+```
+
+The UI origin in the browser must **exactly** match `Cors__AllowedOrigins` (scheme + host, no `/register` path).
+
+Check Render **API** logs after deploy for: `CORS enabled: policy=Deployed, origins=https://...`
+
+If that line is missing or the app crashes on startup, CORS env vars are not set — re-run deploy with **sync_environment** enabled.
+
 ## Deploy from GitHub (normal path)
 
 1. Open **Actions** → **Deploy test environment** → **Run workflow**.
@@ -34,7 +52,7 @@ The workflow will:
 | `NEON_CONNECTION_STRING` | Neon connection string — **URI** (`postgresql://...?sslmode=require`) or **.NET** form below |
 | `JWT_KEY` | Random 32+ characters (signing key; rotate invalidates tokens) |
 | `TEST_API_URL` | Live API URL, e.g. `https://bookingai-api.onrender.com` (no trailing slash; must match Render service URL) |
-| `TEST_UI_URL` | `https://booking-system-ui.onrender.com` (exact CORS origin) |
+| `TEST_UI_URL` | UI origin only, e.g. `https://bookingai-9702.onrender.com` (no path, no trailing slash) |
 
 Optional:
 

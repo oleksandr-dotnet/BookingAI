@@ -41,10 +41,27 @@ public static class ApiCorsExtensions
         return GetAllowedOrigins(configuration).Length > 0 ? DeployedPolicy : null;
     }
 
+    public static void ValidateHostedCors(IHostEnvironment environment, IConfiguration configuration)
+    {
+        if (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
+            return;
+
+        if (GetAllowedOrigins(configuration).Length == 0)
+        {
+            throw new InvalidOperationException(
+                "CORS is not configured for hosted deployment. Set environment variable " +
+                "Cors__AllowedOrigins or TEST_UI_URL to the UI origin " +
+                "(example: https://bookingai-9702.onrender.com, no trailing slash).");
+        }
+    }
+
     public static void UseApiCors(this WebApplication app, string? policyName)
     {
-        if (policyName is not null)
-            app.UseCors(policyName);
+        if (policyName is null)
+            return;
+
+        app.UseRouting();
+        app.UseCors(policyName);
     }
 
     public static RouteGroupBuilder WithApiCors(this RouteGroupBuilder group, string? policyName)
