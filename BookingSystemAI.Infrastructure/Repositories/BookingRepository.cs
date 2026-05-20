@@ -2,6 +2,7 @@ using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Domain.Entities;
 using BookingSystemAI.Infrastructure.Data;
 using BookingSystemAI.Infrastructure.Data.Entities;
+using BookingSystemAI.Infrastructure.Sql;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystemAI.Infrastructure.Repositories;
@@ -34,7 +35,10 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
             ApartmentId = booking.ApartmentId,
             UserId = booking.UserId,
             Start = booking.Start,
-            End = booking.End
+            End = booking.End,
+            PricePerNight = booking.PricePerNight,
+            GuestCount = booking.GuestCount,
+            Amenities = EntityMapping.MapAmenityNames(booking.Amenities)
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -51,16 +55,6 @@ public sealed class BookingRepository(ApplicationDbContext dbContext) : IBooking
             .OrderBy(b => b.Start)
             .ToListAsync(cancellationToken);
 
-        return records.Select(MapToDomain).ToList();
+        return records.Select(EntityMapping.MapToDomain).ToList();
     }
-
-    private static Booking MapToDomain(BookingRecord record) =>
-        new()
-        {
-            Id = record.Id,
-            ApartmentId = record.ApartmentId,
-            UserId = record.UserId,
-            Start = record.Start,
-            End = record.End
-        };
 }

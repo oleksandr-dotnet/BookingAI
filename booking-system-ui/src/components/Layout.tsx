@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { getDefaultPathForRoles } from '../utils/jwt'
 
 export function Layout() {
-  const { isAuthenticated, logout, isHost, isClient, roles } = useAuth()
+  const { isAuthenticated, logout, isHost, isClient, isAdmin, roles } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -22,6 +22,7 @@ export function Layout() {
           <Link to="/apartments">Apartments</Link>
           {isAuthenticated && isClient && <Link to="/bookings">My bookings</Link>}
           {isAuthenticated && isHost && <Link to="/host">My apartments</Link>}
+          {isAuthenticated && isAdmin && <Link to="/admin">Admin panel</Link>}
           {isAuthenticated ? (
             <>
               <Link to={getDefaultPathForRoles(roles)} className="nav-account">

@@ -2,6 +2,7 @@ using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Domain.Entities;
 using BookingSystemAI.Infrastructure.Data;
 using BookingSystemAI.Infrastructure.Data.Entities;
+using BookingSystemAI.Infrastructure.Sql;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystemAI.Infrastructure.Repositories;
@@ -11,7 +12,7 @@ public sealed class ApartmentRepository(ApplicationDbContext dbContext) : IApart
     public async Task<IReadOnlyList<Apartment>> ListAllAsync(CancellationToken cancellationToken = default)
     {
         var records = await dbContext.Apartments.AsNoTracking().OrderBy(a => a.Name).ToListAsync(cancellationToken);
-        return records.Select(MapToDomain).ToList();
+        return records.Select(EntityMapping.MapToDomain).ToList();
     }
 
     public async Task<IReadOnlyList<Apartment>> ListByHostIdAsync(string hostId,
@@ -22,13 +23,24 @@ public sealed class ApartmentRepository(ApplicationDbContext dbContext) : IApart
             .Where(a => a.HostId == hostId)
             .OrderBy(a => a.Name)
             .ToListAsync(cancellationToken);
-        return records.Select(MapToDomain).ToList();
+        return records.Select(EntityMapping.MapToDomain).ToList();
     }
 
     public async Task<Apartment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var record = await dbContext.Apartments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
-        return record is null ? null : MapToDomain(record);
+        return record is null ? null : EntityMapping.MapToDomain(record);
+    }
+
+    public async Task<Apartment?> GetByExternalAsync(Guid sourceCompanyId, string externalId,
+        CancellationToken cancellationToken = default)
+    {
+        var record = await dbContext.Apartments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                a => a.SourceCompanyId == sourceCompanyId && a.ExternalId == externalId,
+                cancellationToken);
+        return record is null ? null : EntityMapping.MapToDomain(record);
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default) =>
@@ -41,19 +53,14 @@ public sealed class ApartmentRepository(ApplicationDbContext dbContext) : IApart
             Id = apartment.Id,
             HostId = apartment.HostId,
             Name = apartment.Name,
-            Description = apartment.Description
+            Description = apartment.Description,
+            PricePerNight = apartment.PricePerNight,
+            GuestCount = apartment.GuestCount,
+            Amenities = EntityMapping.MapAmenityNames(apartment.Amenities),
+            MetadataJson = apartment.MetadataJson,
+            SourceCompanyId = apartment.SourceCompanyId,
+            ExternalId = apartment.ExternalId
         });
         await dbContext.SaveChangesAsync(cancellationToken);
     }
-
-    private static Apartment MapToDomain(ApartmentRecord record) =>
-        new()
-        {
-            Id = record.Id,
-            HostId = record.HostId,
-            Name = record.Name,
-            Description = record.Description,
-            SourceCompanyId = record.SourceCompanyId,
-            ExternalId = record.ExternalId
-        };
 }

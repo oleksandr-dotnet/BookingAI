@@ -18,6 +18,7 @@ interface AuthContextValue {
   isAuthenticated: boolean
   isHost: boolean
   isClient: boolean
+  isAdmin: boolean
   login: (request: LoginRequest) => Promise<string[]>
   logout: () => void
   setToken: (token: string) => void
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: token !== null,
       isHost: roles.includes('Host'),
       isClient: roles.includes('Client'),
+      isAdmin: roles.includes('Admin'),
       login,
       logout,
       setToken,

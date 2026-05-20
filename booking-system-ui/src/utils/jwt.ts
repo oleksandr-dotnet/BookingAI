@@ -17,6 +17,7 @@ export function getRolesFromToken(token: string): string[] {
 }
 
 export function getDefaultPathForRoles(roles: string[]): string {
+  if (roles.includes('Admin')) return '/admin'
   if (roles.includes('Host')) return '/host'
   if (roles.includes('Client')) return '/apartments'
   return '/'

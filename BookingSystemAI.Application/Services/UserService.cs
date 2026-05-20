@@ -96,7 +96,7 @@ public class UserService(IIdentityUserManager identityUserManager, IJwtTokenServ
 
 
 
-        if (string.IsNullOrWhiteSpace(request.Role) || !ApplicationRoles.All.Contains(request.Role))
+        if (string.IsNullOrWhiteSpace(request.Role) || !ApplicationRoles.Registerable.Contains(request.Role))
 
         {
 

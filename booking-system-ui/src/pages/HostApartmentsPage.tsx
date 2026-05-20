@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { createHostApartment, listHostApartments } from '../api/hostApartments'
+import { AmenityCheckboxes } from '../components/AmenityCheckboxes'
 import { ApartmentCard } from '../components/ApartmentCard'
 import { useAuth } from '../context/AuthContext'
 import { ApiError, type ApartmentListItem, type ApartmentResponse } from '../types/api'
 
 function toListItem(a: ApartmentResponse): ApartmentListItem {
-  return { id: a.id, name: a.name, description: a.description }
+  return {
+    id: a.id,
+    name: a.name,
+    description: a.description,
+    pricePerNight: a.pricePerNight,
+    guestCount: a.guestCount,
+    amenities: a.amenities,
+  }
 }
 
 export function HostApartmentsPage() {
@@ -13,6 +21,9 @@ export function HostApartmentsPage() {
   const [apartments, setApartments] = useState<ApartmentResponse[]>([])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [pricePerNight, setPricePerNight] = useState('100')
+  const [guestCount, setGuestCount] = useState('2')
+  const [amenities, setAmenities] = useState<string[]>(['Shower'])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,9 +57,21 @@ export function HostApartmentsPage() {
     setFieldErrors(undefined)
     setSuccess(null)
     try {
-      await createHostApartment({ name, description }, token)
+      await createHostApartment(
+        {
+          name,
+          description,
+          pricePerNight: Number(pricePerNight),
+          guestCount: Number(guestCount),
+          amenities,
+        },
+        token,
+      )
       setName('')
       setDescription('')
+      setPricePerNight('100')
+      setGuestCount('2')
+      setAmenities(['Shower'])
       setSuccess('Apartment created.')
       await load()
     } catch (err) {
@@ -102,6 +125,28 @@ export function HostApartmentsPage() {
               maxLength={2000}
             />
           </label>
+          <label className="field">
+            <span>Price per night</span>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={pricePerNight}
+              onChange={(e) => setPricePerNight(e.target.value)}
+              required
+            />
+          </label>
+          <label className="field">
+            <span>Guest capacity</span>
+            <input
+              type="number"
+              min={1}
+              value={guestCount}
+              onChange={(e) => setGuestCount(e.target.value)}
+              required
+            />
+          </label>
+          <AmenityCheckboxes selected={amenities} onChange={setAmenities} disabled={isSubmitting} />
           <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
             {isSubmitting ? 'Creating…' : 'Create apartment'}
           </button>

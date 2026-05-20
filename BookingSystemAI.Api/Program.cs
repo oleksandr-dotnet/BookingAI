@@ -54,6 +54,7 @@ app.MapAuthEndpoints();
 app.MapApartmentEndpoints();
 app.MapHostApartmentEndpoints();
 app.MapBookingEndpoints();
+app.MapAnalyticsEndpoints();
 
 var summaries = new[]
 {

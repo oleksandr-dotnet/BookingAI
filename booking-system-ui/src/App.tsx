@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext'
 import { CatalogPage } from './pages/CatalogPage'
 import { ClientBookingsPage } from './pages/ClientBookingsPage'
 import { HomePage } from './pages/HomePage'
+import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { HostApartmentsPage } from './pages/HostApartmentsPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -32,6 +33,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['Host']}>
                   <HostApartmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin"
+              element={
+                <ProtectedRoute roles={['Admin']}>
+                  <AdminDashboardPage />
                 </ProtectedRoute>
               }
             />

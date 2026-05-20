@@ -80,6 +80,8 @@ public sealed class CompanyMigrationService(
                                 HostId = hostIdByExternalId[host.ExternalId],
                                 Name = apartment.Name,
                                 Description = apartment.Description,
+                                PricePerNight = 0,
+                                GuestCount = 1,
                                 SourceCompanyId = export.SourceCompanyId,
                                 ExternalId = apartment.ExternalId
                             },

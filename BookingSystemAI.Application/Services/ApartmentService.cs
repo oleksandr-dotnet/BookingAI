@@ -1,5 +1,6 @@
 using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Application.DTOs;
+using BookingSystemAI.Application.Listing;
 
 namespace BookingSystemAI.Application.Services;
 
@@ -17,9 +18,7 @@ public class ApartmentService(IApartmentRepository apartmentRepository, IBooking
 
         if (query.From is null && query.To is null)
         {
-            return apartments
-                .Select(a => new ApartmentListItemDto(a.Id, a.Name, a.Description))
-                .ToList();
+            return apartments.Select(a => ApartmentDtoMapper.ToListItem(a)).ToList();
         }
 
         var from = query.From!.Value;
@@ -33,7 +32,7 @@ public class ApartmentService(IApartmentRepository apartmentRepository, IBooking
             if (query.AvailableOnly && !isAvailable)
                 continue;
 
-            items.Add(new ApartmentListItemDto(apartment.Id, apartment.Name, apartment.Description, isAvailable));
+            items.Add(ApartmentDtoMapper.ToListItem(apartment, isAvailable));
         }
 
         return items;

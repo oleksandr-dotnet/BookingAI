@@ -11,6 +11,9 @@ public sealed class BookingRecordConfiguration : IEntityTypeConfiguration<Bookin
         builder.ToTable("Bookings");
         builder.HasKey(b => b.Id);
         builder.Property(b => b.UserId).HasMaxLength(450).IsRequired();
+        builder.Property(b => b.PricePerNight).HasPrecision(18, 2).IsRequired();
+        builder.Property(b => b.GuestCount).IsRequired();
+        builder.Property(b => b.Amenities).HasColumnType("text[]").IsRequired();
         builder.HasIndex(b => new { b.ApartmentId, b.Start, b.End });
         builder.HasIndex(b => b.UserId);
         builder.HasOne(b => b.Apartment)

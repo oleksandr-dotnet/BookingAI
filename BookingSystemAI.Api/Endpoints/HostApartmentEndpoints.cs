@@ -33,6 +33,16 @@ public static class HostApartmentEndpoints
                 return operation;
             });
 
+        group.MapPut("/upsert", UpsertApartment)
+            .WithName("UpsertHostApartment")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "Upsert apartment via SQL (Host)";
+                operation.Description =
+                    "Insert or update by id or external identity using Dapper and raw SQL. JSONB metadata replaces when provided.";
+                return operation;
+            });
+
         return group;
     }
 
@@ -61,6 +71,31 @@ public static class HostApartmentEndpoints
 
         var apartments = await hostApartmentService.ListMineAsync(hostId, cancellationToken);
         return Results.Ok(apartments);
+    }
+
+    private static async Task<IResult> UpsertApartment(
+        UpsertApartmentRequestDto request,
+        ClaimsPrincipal user,
+        IApartmentUpsertService upsertService,
+        CancellationToken cancellationToken)
+    {
+        var hostId = GetUserId(user);
+        if (hostId is null)
+            return Results.Unauthorized();
+
+        var result = await upsertService.UpsertAsync(hostId, request, cancellationToken);
+        return MapUpsertResult(result);
+    }
+
+    private static IResult MapUpsertResult(UpsertApartmentResult result)
+    {
+        if (result.ValidationErrors is not null)
+            return Results.ValidationProblem(result.ValidationErrors);
+
+        if (result.FailureReason == UpsertApartmentFailureReason.NotFound)
+            return Results.NotFound();
+
+        return Results.Ok(result.Response);
     }
 
     private static IResult MapCreateResult(CreateApartmentResult result)

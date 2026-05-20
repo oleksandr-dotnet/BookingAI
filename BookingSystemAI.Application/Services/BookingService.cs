@@ -1,5 +1,6 @@
 using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Application.DTOs;
+using BookingSystemAI.Application.Listing;
 using BookingSystemAI.Application.Models;
 using BookingSystemAI.Domain.Entities;
 
@@ -15,7 +16,8 @@ public class BookingService(IApartmentRepository apartmentRepository, IBookingRe
         if (validationErrors is not null)
             return CreateBookingResult.ValidationFailure(validationErrors);
 
-        if (!await apartmentRepository.ExistsAsync(request.ApartmentId, cancellationToken))
+        var apartment = await apartmentRepository.GetByIdAsync(request.ApartmentId, cancellationToken);
+        if (apartment is null)
             return CreateBookingResult.NotFound();
 
         var booking = new Booking
@@ -24,27 +26,24 @@ public class BookingService(IApartmentRepository apartmentRepository, IBookingRe
             ApartmentId = request.ApartmentId,
             UserId = userId,
             Start = request.Start,
-            End = request.End
+            End = request.End,
+            PricePerNight = apartment.PricePerNight,
+            GuestCount = apartment.GuestCount,
+            Amenities = apartment.Amenities
         };
 
         var added = await bookingRepository.TryAddAsync(booking, cancellationToken);
         if (!added)
             return CreateBookingResult.Conflict();
 
-        return CreateBookingResult.Success(new BookingResponseDto(
-            booking.Id,
-            booking.ApartmentId,
-            booking.Start,
-            booking.End));
+        return CreateBookingResult.Success(BookingDtoMapper.ToResponse(booking));
     }
 
     public async Task<IReadOnlyList<BookingResponseDto>> ListMineAsync(string userId,
         CancellationToken cancellationToken = default)
     {
         var bookings = await bookingRepository.ListByUserIdAsync(userId, cancellationToken);
-        return bookings
-            .Select(b => new BookingResponseDto(b.Id, b.ApartmentId, b.Start, b.End))
-            .ToList();
+        return bookings.Select(BookingDtoMapper.ToResponse).ToList();
     }
 
     private static IReadOnlyDictionary<string, string[]>? ValidateRequest(CreateBookingRequestDto request)

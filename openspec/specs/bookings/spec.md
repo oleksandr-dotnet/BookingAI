@@ -1,7 +1,8 @@
 # bookings Specification
 
 ## Purpose
-TBD - created by archiving change add-apartment-booking. Update Purpose after archive.
+Client bookings with snapshot of apartment listing fields at reservation time.
+
 ## Requirements
 ### Requirement: Client role for booking endpoints
 
@@ -19,12 +20,12 @@ The system SHALL require the Client role for `POST /bookings` and `GET /bookings
 
 ### Requirement: Create booking for available apartment
 
-The system SHALL allow an authenticated Client to create a booking via `POST /bookings` with body fields `apartmentId`, `start`, and `end` (ISO 8601 `DateTimeOffset`), using half-open interval `[start, end)`.
+The system SHALL allow an authenticated Client to create a booking via `POST /bookings` with body fields `apartmentId`, `start`, and `end` (ISO 8601 `DateTimeOffset`), using half-open interval `[start, end)`. The created booking SHALL snapshot `pricePerNight`, `guestCount`, and `amenities` from the target apartment at booking time.
 
 #### Scenario: Successful booking
 
 - **WHEN** authenticated Client posts a valid future window for an existing apartment with no overlapping booking
-- **THEN** the system returns 201 Created with booking `id`, `apartmentId`, `start`, `end`, and does not expose other users' data
+- **THEN** the system returns 201 Created with booking `id`, `apartmentId`, `start`, `end`, `pricePerNight`, `guestCount`, and `amenities` copied from the apartment, and does not expose other users' data
 
 #### Scenario: Unauthenticated create
 
@@ -67,7 +68,7 @@ The system SHALL expose `GET /bookings` for authenticated Clients returning only
 #### Scenario: List my bookings
 
 - **WHEN** authenticated Client calls `GET /bookings`
-- **THEN** the system returns 200 OK with a JSON array of that user's bookings (each including `id`, `apartmentId`, `start`, `end`)
+- **THEN** the system returns 200 OK with a JSON array of that user's bookings (each including `id`, `apartmentId`, `start`, `end`, `pricePerNight`, `guestCount`, and `amenities`)
 
 #### Scenario: No cross-user leakage
 
@@ -93,3 +94,11 @@ The system SHALL persist bookings in PostgreSQL via Entity Framework Core alongs
 - **WHEN** a booking is created and the application restarts
 - **THEN** the booking is still returned for the owning Client on `GET /bookings`
 
+### Requirement: Booking snapshot immutability
+
+The system SHALL NOT update `pricePerNight`, `guestCount`, or `amenities` on an existing booking when the parent apartment is later modified.
+
+#### Scenario: Apartment price change does not alter past booking
+
+- **WHEN** a booking exists and the host later changes the apartment `pricePerNight`
+- **THEN** `GET /bookings` for the client still returns the original snapshot values on that booking

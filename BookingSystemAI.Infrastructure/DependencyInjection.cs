@@ -7,6 +7,7 @@ using BookingSystemAI.Infrastructure.Options;
 using BookingSystemAI.Infrastructure.CompanyImport;
 using BookingSystemAI.Infrastructure.Repositories;
 using BookingSystemAI.Infrastructure.Services;
+using BookingSystemAI.Infrastructure.Sql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -66,11 +67,15 @@ public static class DependencyInjection
 
         services.AddAuthorizationBuilder()
             .AddPolicy(ApplicationRoles.Host, policy => policy.RequireRole(ApplicationRoles.Host))
-            .AddPolicy(ApplicationRoles.Client, policy => policy.RequireRole(ApplicationRoles.Client));
+            .AddPolicy(ApplicationRoles.Client, policy => policy.RequireRole(ApplicationRoles.Client))
+            .AddPolicy(ApplicationRoles.Admin, policy => policy.RequireRole(ApplicationRoles.Admin));
         services.AddScoped<IIdentityUserManager, IdentityUserManagerAdapter>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IBookingRepository, BookingRepository>();
+        services.AddSingleton<ISqlScriptLoader, SqlScriptLoader>();
+        services.AddScoped<INpgsqlConnectionFactory, NpgsqlConnectionFactory>();
+        services.AddScoped<IApartmentSqlGateway, DapperApartmentSqlGateway>();
         services.AddScoped<IJsonExportReader, JsonExportReader>();
         services.AddScoped<IMigrationTransactor, MigrationTransactor>();
         services.AddScoped<IExternalEntityLookup, ExternalEntityLookup>();
@@ -83,7 +88,9 @@ public static class DependencyInjection
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         await db.Database.MigrateAsync();
         await IdentityRoleSeeder.SeedAsync(services);
+        await IdentityAdminSeeder.SeedAsync(services, configuration);
     }
 }

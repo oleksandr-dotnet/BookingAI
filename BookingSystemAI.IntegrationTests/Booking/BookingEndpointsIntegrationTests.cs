@@ -19,7 +19,7 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
     public async Task HostCreateApartment_ShouldReturnCreated_WhenUserIsHost()
     {
         var token = await RegisterAndLoginAsync(ApplicationRoles.Host);
-        var request = new CreateApartmentRequestDto("Studio A", "Cozy studio");
+        var request = new CreateApartmentRequestDto("Studio A", "Cozy studio", 80, 2, ["Shower"]);
 
         var response = await SendAuthorizedAsync(HttpMethod.Post, "/host/apartments", token, request);
 
@@ -44,7 +44,7 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
     public async Task HostCreateApartment_ShouldReturnForbidden_WhenUserIsClient()
     {
         var token = await RegisterAndLoginAsync(ApplicationRoles.Client);
-        var request = new CreateApartmentRequestDto("Studio B", "Another studio");
+        var request = new CreateApartmentRequestDto("Studio B", "Another studio", 90, 2, ["LargeBed"]);
 
         var response = await SendAuthorizedAsync(HttpMethod.Post, "/host/apartments", token, request);
 
@@ -67,7 +67,7 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
             HttpMethod.Post,
             "/host/apartments",
             hostToken,
-            new CreateApartmentRequestDto("Bookable Flat", "For integration test"));
+            new CreateApartmentRequestDto("Bookable Flat", "For integration test", 100, 2, ["Microwave", "Shower"]));
         createApartment.StatusCode.ShouldBe(HttpStatusCode.Created);
         var apartment = await createApartment.Content.ReadFromJsonAsync<ApartmentResponseDto>();
 
@@ -84,6 +84,9 @@ public class BookingEndpointsIntegrationTests(IntegrationTestFixture fixture)
         var bookings = await listResponse.Content.ReadFromJsonAsync<BookingResponseDto[]>();
         bookings!.Length.ShouldBe(1);
         bookings[0].ApartmentId.ShouldBe(apartment.Id);
+        bookings[0].PricePerNight.ShouldBe(100);
+        bookings[0].GuestCount.ShouldBe(2);
+        bookings[0].Amenities.ShouldBe(["Microwave", "Shower"]);
     }
 
     [Fact]

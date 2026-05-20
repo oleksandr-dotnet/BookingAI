@@ -7,5 +7,8 @@ public sealed class BookingRecord
     public required string UserId { get; set; }
     public DateTimeOffset Start { get; set; }
     public DateTimeOffset End { get; set; }
+    public decimal PricePerNight { get; set; }
+    public int GuestCount { get; set; }
+    public List<string> Amenities { get; set; } = [];
     public ApartmentRecord? Apartment { get; set; }
 }

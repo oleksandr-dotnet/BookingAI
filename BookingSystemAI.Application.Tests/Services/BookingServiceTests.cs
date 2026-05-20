@@ -2,6 +2,7 @@ using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Application.DTOs;
 using BookingSystemAI.Application.Models;
 using BookingSystemAI.Application.Services;
+using BookingSystemAI.Domain;
 using BookingSystemAI.Domain.Entities;
 using Moq;
 using Shouldly;
@@ -28,13 +29,41 @@ public class BookingServiceTests
             DateTimeOffset.UtcNow.AddHours(1),
             DateTimeOffset.UtcNow.AddHours(2));
 
-        _apartmentRepository.Setup(r => r.ExistsAsync(apartmentId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        SetupApartment(apartmentId);
         _bookingRepository.Setup(r => r.TryAddAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var result = await _sut.CreateAsync("client-1", request);
 
         result.Succeeded.ShouldBeFalse();
         result.FailureReason.ShouldBe(CreateBookingFailureReason.Conflict);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldSnapshotApartmentListingFields_WhenBookingSucceeds()
+    {
+        var apartmentId = Guid.NewGuid();
+        var request = new CreateBookingRequestDto(
+            apartmentId,
+            DateTimeOffset.UtcNow.AddDays(1),
+            DateTimeOffset.UtcNow.AddDays(2));
+
+        SetupApartment(apartmentId, pricePerNight: 120, guestCount: 3, amenities: [Amenity.LargeBed, Amenity.Shower]);
+        Booking? captured = null;
+        _bookingRepository
+            .Setup(r => r.TryAddAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
+            .Callback<Booking, CancellationToken>((b, _) => captured = b)
+            .ReturnsAsync(true);
+
+        var result = await _sut.CreateAsync("client-1", request);
+
+        result.Succeeded.ShouldBeTrue();
+        captured.ShouldNotBeNull();
+        captured!.PricePerNight.ShouldBe(120);
+        captured.GuestCount.ShouldBe(3);
+        captured.Amenities.ShouldBe([Amenity.LargeBed, Amenity.Shower]);
+        result.Response!.PricePerNight.ShouldBe(120);
+        result.Response.GuestCount.ShouldBe(3);
+        result.Response.Amenities.ShouldBe(["LargeBed", "Shower"]);
     }
 
     [Fact]
@@ -51,4 +80,21 @@ public class BookingServiceTests
         result.FailureReason.ShouldBe(CreateBookingFailureReason.Validation);
         result.ValidationErrors!["end"].ShouldContain("End must be after start.");
     }
+
+    private void SetupApartment(
+        Guid apartmentId,
+        decimal pricePerNight = 0,
+        int guestCount = 1,
+        IReadOnlyList<Amenity>? amenities = null) =>
+        _apartmentRepository.Setup(r => r.GetByIdAsync(apartmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Apartment
+            {
+                Id = apartmentId,
+                HostId = "host-1",
+                Name = "Test",
+                Description = "Desc",
+                PricePerNight = pricePerNight,
+                GuestCount = guestCount,
+                Amenities = amenities ?? []
+            });
 }

@@ -64,6 +64,16 @@ export function ClientBookingsPage() {
                 <p className="booking-item-dates">
                   {new Date(b.start).toLocaleString()} — {new Date(b.end).toLocaleString()}
                 </p>
+                <p className="booking-item-meta">
+                  ${b.pricePerNight}/night · {b.guestCount} guests
+                </p>
+                {b.amenities.length > 0 && (
+                  <ul className="amenity-tags">
+                    {b.amenities.map((a) => (
+                      <li key={a}>{a}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </li>
           ))}

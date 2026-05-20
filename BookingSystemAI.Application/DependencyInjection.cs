@@ -12,6 +12,8 @@ public static class DependencyInjection
         services.AddScoped<IApartmentService, ApartmentService>();
         services.AddScoped<IHostApartmentService, HostApartmentService>();
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<IApartmentUpsertService, ApartmentUpsertService>();
+        services.AddScoped<IApartmentAnalyticsService, ApartmentAnalyticsService>();
         services.AddScoped<ICompanyMigrationService, CompanyMigrationService>();
         return services;
     }

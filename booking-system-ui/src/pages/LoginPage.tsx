@@ -49,9 +49,14 @@ export function LoginPage() {
       fieldErrors={fieldErrors}
       submitLabel="Sign in"
       footer={
-        <p>
-          No account? <Link to="/register">Register</Link>
-        </p>
+        <>
+          <p>
+            No account? <Link to="/register">Register</Link>
+          </p>
+          <p className="auth-hint">
+            Admin: <code>admin@bookingsystem.local</code> / <code>Admin123!</code>
+          </p>
+        </>
       }
     >
       <label className="field">

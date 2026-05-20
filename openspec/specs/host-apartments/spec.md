@@ -1,16 +1,17 @@
 # host-apartments Specification
 
 ## Purpose
-TBD - created by archiving change add-apartment-booking. Update Purpose after archive.
+Host-owned apartment management with listing economics, optional JSONB metadata, and SQL upsert for integrations.
+
 ## Requirements
 ### Requirement: Host creates apartment
 
-The system SHALL allow a user with the Host role to create an apartment via `POST /host/apartments` with body `name` and `description`.
+The system SHALL allow a user with the Host role to create an apartment via `POST /host/apartments` with body `name`, `description`, `pricePerNight`, `guestCount`, `amenities`, and optional `metadata`.
 
 #### Scenario: Successful create
 
-- **WHEN** authenticated Host posts valid `name` and `description`
-- **THEN** the system returns 201 Created with apartment `id`, `name`, `description`, and persists `hostId` equal to the Host's user identifier from the JWT
+- **WHEN** authenticated Host posts valid `name`, `description`, `pricePerNight`, `guestCount`, and `amenities`
+- **THEN** the system returns 201 Created with apartment `id`, `name`, `description`, `pricePerNight`, `guestCount`, `amenities`, optional `metadata`, and persists `hostId` equal to the Host's user identifier from the JWT
 
 #### Scenario: Unauthenticated create
 
@@ -29,12 +30,12 @@ The system SHALL allow a user with the Host role to create an apartment via `POS
 
 ### Requirement: Host lists own apartments
 
-The system SHALL expose `GET /host/apartments` for users with the Host role returning only apartments where `hostId` matches the caller.
+The system SHALL expose `GET /host/apartments` for users with the Host role returning only apartments where `hostId` matches the caller, including `metadata` for each apartment.
 
 #### Scenario: List my apartments as Host
 
 - **WHEN** authenticated Host calls `GET /host/apartments`
-- **THEN** the system returns 200 OK with apartments owned by that Host (each with `id`, `name`, `description`)
+- **THEN** the system returns 200 OK with apartments owned by that Host (each with `id`, `name`, `description`, `pricePerNight`, `guestCount`, `amenities`, and `metadata`)
 
 #### Scenario: No cross-host leakage
 
@@ -87,4 +88,3 @@ Migrated apartments SHALL use `hostId` equal to the migrated host's Identity use
 
 - **WHEN** export places apartment `A` under host `H` and migration succeeds
 - **THEN** apartment `A` has `hostId` matching migrated host `H` and `GET /host/apartments` for that host includes apartment `A` after login
-

@@ -19,6 +19,18 @@ export function ApartmentCard({ apartment, children }: ApartmentCardProps) {
         )}
       </div>
       <p className="apartment-card-desc">{apartment.description || '—'}</p>
+      <div className="apartment-card-meta">
+        <span>${apartment.pricePerNight}/night</span>
+        <span>·</span>
+        <span>Up to {apartment.guestCount} guests</span>
+      </div>
+      {apartment.amenities.length > 0 && (
+        <ul className="amenity-tags">
+          {apartment.amenities.map((a) => (
+            <li key={a}>{a}</li>
+          ))}
+        </ul>
+      )}
       {children}
     </article>
   )

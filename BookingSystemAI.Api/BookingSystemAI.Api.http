@@ -43,6 +43,16 @@ Content-Type: application/json
   "password": "{{password}}"
 }
 
+### Login Admin (seeded on startup)
+# @name adminLogin
+POST {{BookingSystemAI_HostAddress}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@bookingsystem.local",
+  "password": "Admin123!"
+}
+
 ### List apartments (public)
 GET {{BookingSystemAI_HostAddress}}/apartments
 Accept: application/json
@@ -58,8 +68,51 @@ Content-Type: application/json
 
 {
   "name": "Studio A",
-  "description": "Downtown studio"
+  "description": "Downtown studio",
+  "pricePerNight": 95,
+  "guestCount": 2,
+  "amenities": ["LargeBed", "Shower"],
+  "metadata": { "channel": "direct" }
 }
+
+### Upsert apartment via SQL (Host)
+PUT {{BookingSystemAI_HostAddress}}/host/apartments/upsert
+Authorization: Bearer {{hostLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "SQL Loft",
+  "description": "Upserted listing",
+  "pricePerNight": 150,
+  "guestCount": 3,
+  "amenities": ["LargeBed", "Bath", "Microwave"],
+  "metadata": { "channel": "partner-x", "listingCode": "LX-9" }
+}
+
+### Booking analytics summary (Admin)
+GET {{BookingSystemAI_HostAddress}}/analytics/bookings/summary
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+Accept: application/json
+
+### Bookings by apartment analytics (Admin)
+GET {{BookingSystemAI_HostAddress}}/analytics/bookings/by-apartment
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+Accept: application/json
+
+### Active hosts analytics (Admin)
+GET {{BookingSystemAI_HostAddress}}/analytics/hosts/active?minBookings=1
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+Accept: application/json
+
+### Price quantiles analytics (Admin)
+GET {{BookingSystemAI_HostAddress}}/analytics/apartments/price-quantiles
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+Accept: application/json
+
+### Apartment occupancy analytics (Admin)
+GET {{BookingSystemAI_HostAddress}}/analytics/apartments/occupancy?minAvgNights=0
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+Accept: application/json
 
 ### List my apartments (Host)
 GET {{BookingSystemAI_HostAddress}}/host/apartments
