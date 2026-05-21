@@ -7,6 +7,58 @@ public static class ListingValidation
 {
     public const int MaxMetadataBytes = 16 * 1024;
 
+    public static IReadOnlyDictionary<string, string[]>? ValidateCity(string? city)
+    {
+        if (string.IsNullOrWhiteSpace(city))
+        {
+            return new Dictionary<string, string[]>
+            {
+                ["city"] = ["City is required."]
+            };
+        }
+
+        var trimmed = city.Trim();
+        if (trimmed.Length > ApartmentListingFields.MaxCityLength)
+        {
+            return new Dictionary<string, string[]>
+            {
+                ["city"] = [$"City must not exceed {ApartmentListingFields.MaxCityLength} characters."]
+            };
+        }
+
+        return null;
+    }
+
+    public static IReadOnlyDictionary<string, string[]>? ValidateImageUrlCount(IReadOnlyList<string>? imageUrls)
+    {
+        if (imageUrls is null || imageUrls.Count == 0)
+            return null;
+
+        if (imageUrls.Count > ApartmentListingFields.MaxImageCount)
+        {
+            return new Dictionary<string, string[]>
+            {
+                ["imageUrls"] = [$"At most {ApartmentListingFields.MaxImageCount} images are allowed."]
+            };
+        }
+
+        foreach (var imageUrl in imageUrls)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                continue;
+
+            if (imageUrl.Trim().Length > ApartmentListingFields.MaxImageUrlLength)
+            {
+                return new Dictionary<string, string[]>
+                {
+                    ["imageUrls"] = [$"Each image URL must not exceed {ApartmentListingFields.MaxImageUrlLength} characters."]
+                };
+            }
+        }
+
+        return null;
+    }
+
     public static IReadOnlyDictionary<string, string[]>? ValidateEconomics(decimal pricePerNight, int guestCount)
     {
         var errors = new Dictionary<string, string[]>();
@@ -77,7 +129,7 @@ public static class ListingValidation
             };
         }
 
-        return null;
+        return ListingPresentation.Validate(metadata.Value);
     }
 
     public static string SerializeMetadata(JsonElement? metadata) =>

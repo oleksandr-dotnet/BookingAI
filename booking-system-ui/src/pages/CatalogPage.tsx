@@ -1,42 +1,38 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { listApartments } from '../api/apartments'
-import { createBooking } from '../api/bookings'
 import { ApartmentCard } from '../components/ApartmentCard'
 import { useAuth } from '../context/AuthContext'
 import { ApiError, type ApartmentListItem } from '../types/api'
-
-function toIsoLocalInput(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-function localInputToIso(value: string): string {
-  return new Date(value).toISOString()
-}
+import {
+  addDaysToDateInput,
+  dateInputToEndIso,
+  dateInputToStartIso,
+  todayDateInputValue,
+} from '../utils/dates'
 
 export function CatalogPage() {
+  const navigate = useNavigate()
   const { token, isClient } = useAuth()
   const [apartments, setApartments] = useState<ApartmentListItem[]>([])
+  const [cityQuery, setCityQuery] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [availableOnly, setAvailableOnly] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [bookingApartmentId, setBookingApartmentId] = useState<string | null>(null)
-  const [bookingApartmentVersion, setBookingApartmentVersion] = useState<number | null>(null)
+  const [bookingApartment, setBookingApartment] = useState<ApartmentListItem | null>(null)
   const [bookStart, setBookStart] = useState('')
   const [bookEnd, setBookEnd] = useState('')
   const [bookError, setBookError] = useState<string | null>(null)
-  const [bookSuccess, setBookSuccess] = useState<string | null>(null)
-  const [isBooking, setIsBooking] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
       const data = await listApartments({
-        from: from ? localInputToIso(from) : undefined,
-        to: to ? localInputToIso(to) : undefined,
+        from: from ? dateInputToStartIso(from) : undefined,
+        to: to ? dateInputToEndIso(to) : undefined,
         availableOnly: availableOnly && Boolean(from && to),
       })
       setApartments(data)
@@ -53,88 +49,93 @@ export function CatalogPage() {
     void load()
   }, [load])
 
+  const filteredApartments = useMemo(() => {
+    const query = cityQuery.trim().toLowerCase()
+    if (!query) return apartments
+    return apartments.filter((apt) => apt.city.toLowerCase().includes(query))
+  }, [apartments, cityQuery])
+
   const openBook = (apartment: ApartmentListItem) => {
-    setBookingApartmentId(apartment.id)
-    setBookingApartmentVersion(apartment.version)
-    setBookStart(from || toIsoLocalInput(new Date(Date.now() + 86400000)))
-    setBookEnd(to || toIsoLocalInput(new Date(Date.now() + 86400000 * 3)))
+    setBookingApartment(apartment)
+    setBookStart(from || addDaysToDateInput(todayDateInputValue(), 1))
+    setBookEnd(to || addDaysToDateInput(todayDateInputValue(), 3))
     setBookError(null)
-    setBookSuccess(null)
   }
 
-  const handleBook = async (event: FormEvent) => {
+  const closeBook = () => setBookingApartment(null)
+
+  const handleBook = (event: FormEvent) => {
     event.preventDefault()
-    if (!token || !bookingApartmentId || bookingApartmentVersion === null) return
-    setIsBooking(true)
+    if (!token || !bookingApartment) return
     setBookError(null)
-    setBookSuccess(null)
-    try {
-      await createBooking(
-        {
-          apartmentId: bookingApartmentId,
-          apartmentVersion: bookingApartmentVersion,
-          start: localInputToIso(bookStart),
-          end: localInputToIso(bookEnd),
-        },
-        token,
-      )
-      setBookSuccess('Booking created.')
-      setBookingApartmentId(null)
-      setBookingApartmentVersion(null)
-      await load()
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.code === 'apartmentUpdatedByHost') {
-          setBookError(
-            'This apartment was updated by the host. Refresh the list, review the listing, and book again.',
-          )
-          await load()
-        } else if (err.status === 409) {
-          setBookError('This apartment is not available for the selected dates.')
-        } else {
-          setBookError(err.message)
-        }
-      } else {
-        setBookError('Booking failed.')
-      }
-    } finally {
-      setIsBooking(false)
+    const start = dateInputToStartIso(bookStart)
+    const end = dateInputToEndIso(bookEnd)
+    if (new Date(end).getTime() <= new Date(start).getTime()) {
+      setBookError('Check-out must be after check-in.')
+      return
     }
+    closeBook()
+    navigate('/bookings/pay', {
+      state: {
+        apartmentId: bookingApartment.id,
+        apartmentVersion: bookingApartment.version,
+        apartmentName: bookingApartment.name,
+        city: bookingApartment.city,
+        thumbnailUrl: bookingApartment.thumbnailUrl,
+        pricePerNight: bookingApartment.pricePerNight,
+        guestCount: bookingApartment.guestCount,
+        checkIn: bookStart,
+        checkOut: bookEnd,
+        start,
+        end,
+      },
+    })
   }
 
   return (
-    <section className="panel">
+    <section className="panel catalog-panel">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Browse</p>
-          <h1>Apartments</h1>
+          <p className="eyebrow">Stays</p>
+          <h1>Find your next place</h1>
           <p className="panel-lead">
             {isClient
-              ? 'Filter by dates and book available apartments.'
-              : 'Public catalog. Sign in as a Client to make a booking.'}
+              ? 'Search by location and dates, then book available homes.'
+              : 'Browse listings like Airbnb. Sign in as a Client to book.'}
           </p>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={() => void load()} disabled={isLoading}>
-          Refresh
-        </button>
       </div>
 
       <form
-        className="filter-bar"
+        className="catalog-search"
         onSubmit={(e) => {
           e.preventDefault()
           void load()
         }}
       >
-        <label className="field">
-          <span>From</span>
-          <input type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <label className="catalog-search-field">
+          <span>Where</span>
+          <input
+            type="text"
+            placeholder="Search by city"
+            value={cityQuery}
+            onChange={(e) => setCityQuery(e.target.value)}
+          />
         </label>
-        <label className="field">
-          <span>To</span>
-          <input type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} />
+        <label className="catalog-search-field">
+          <span>Check-in</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         </label>
-        <label className="field field-checkbox">
+        <label className="catalog-search-field">
+          <span>Check-out</span>
+          <input
+            type="date"
+            value={to}
+            min={from ? addDaysToDateInput(from, 1) : undefined}
+            onChange={(e) => setTo(e.target.value)}
+          />
+        </label>
+        <label className="catalog-search-field catalog-search-field-checkbox">
           <input
             type="checkbox"
             checked={availableOnly}
@@ -143,16 +144,10 @@ export function CatalogPage() {
           />
           <span>Available only</span>
         </label>
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
-          Apply filters
+        <button type="submit" className="btn btn-primary catalog-search-btn" disabled={isLoading}>
+          Search
         </button>
       </form>
-
-      {bookSuccess && (
-        <div className="alert alert-success" role="status">
-          {bookSuccess}
-        </div>
-      )}
 
       {error && (
         <div className="alert alert-error" role="alert">
@@ -163,11 +158,11 @@ export function CatalogPage() {
       {isLoading && <p className="status-message">Loading apartments…</p>}
 
       {!isLoading && !error && (
-        <div className="apartment-grid">
-          {apartments.length === 0 ? (
+        <div className="apartment-grid catalog-grid">
+          {filteredApartments.length === 0 ? (
             <p className="status-message">No apartments found.</p>
           ) : (
-            apartments.map((apt) => (
+            filteredApartments.map((apt) => (
               <ApartmentCard key={apt.id} apartment={apt}>
                 {isClient &&
                   (apt.isAvailable === undefined || apt.isAvailable === null || apt.isAvailable) && (
@@ -181,15 +176,8 @@ export function CatalogPage() {
         </div>
       )}
 
-      {bookingApartmentId && isClient && (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => {
-            setBookingApartmentId(null)
-            setBookingApartmentVersion(null)
-          }}
-        >
+      {bookingApartment && isClient && (
+        <div className="modal-backdrop" role="presentation" onClick={closeBook}>
           <div
             className="modal"
             role="dialog"
@@ -204,36 +192,30 @@ export function CatalogPage() {
                 </div>
               )}
               <label className="field">
-                <span>Start</span>
+                <span>Check-in</span>
                 <input
-                  type="datetime-local"
+                  type="date"
                   value={bookStart}
                   onChange={(e) => setBookStart(e.target.value)}
                   required
                 />
               </label>
               <label className="field">
-                <span>End</span>
+                <span>Check-out</span>
                 <input
-                  type="datetime-local"
+                  type="date"
                   value={bookEnd}
+                  min={bookStart ? addDaysToDateInput(bookStart, 1) : undefined}
                   onChange={(e) => setBookEnd(e.target.value)}
                   required
                 />
               </label>
               <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setBookingApartmentId(null)
-                    setBookingApartmentVersion(null)
-                  }}
-                >
+                <button type="button" className="btn btn-secondary" onClick={closeBook}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isBooking}>
-                  {isBooking ? 'Booking…' : 'Confirm booking'}
+                <button type="submit" className="btn btn-primary">
+                  Continue to payment
                 </button>
               </div>
             </form>

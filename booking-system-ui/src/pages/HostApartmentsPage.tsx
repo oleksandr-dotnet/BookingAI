@@ -1,20 +1,44 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { createHostApartment, listHostApartments, updateHostApartment } from '../api/hostApartments'
+import {
+  createHostApartment,
+  getHostImageUploadConfig,
+  listHostApartments,
+  updateHostApartment,
+} from '../api/hostApartments'
 import { AmenityCheckboxes } from '../components/AmenityCheckboxes'
 import { ApartmentCard } from '../components/ApartmentCard'
+import { ImageUploadField } from '../components/ImageUploadField'
+import { ListingPresentationFieldsForm } from '../components/ListingPresentationFieldsForm'
 import { useAuth } from '../context/AuthContext'
 import { ApiError, type ApartmentListItem, type ApartmentResponse } from '../types/api'
+import { cloudinaryConfigFromEnv, type CloudinaryConfig } from '../utils/cloudinary'
+import {
+  buildPresentationMetadata,
+  parsePresentationFromMetadata,
+} from '../utils/listingPresentation'
 
 function toListItem(a: ApartmentResponse): ApartmentListItem {
+  const presentation = parsePresentationFromMetadata(a.metadata ?? null)
   return {
     id: a.id,
     name: a.name,
+    city: a.city,
+    imageUrls: a.imageUrls,
+    thumbnailUrl: a.thumbnailUrl,
     description: a.description,
     pricePerNight: a.pricePerNight,
     guestCount: a.guestCount,
     amenities: a.amenities,
     version: a.version,
+    ...presentation,
   }
+}
+
+function readOptionalCount(value: string): number | undefined {
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  const parsed = Number(trimmed)
+  return Number.isInteger(parsed) ? parsed : undefined
 }
 
 const defaultAmenities = ['Shower']
@@ -22,17 +46,32 @@ const defaultAmenities = ['Shower']
 export function HostApartmentsPage() {
   const { token } = useAuth()
   const [apartments, setApartments] = useState<ApartmentResponse[]>([])
+  const [cloudinary, setCloudinary] = useState<CloudinaryConfig | null>(cloudinaryConfigFromEnv())
   const [name, setName] = useState('')
+  const [city, setCity] = useState('')
+  const [imageUrls, setImageUrls] = useState<string[]>([])
   const [description, setDescription] = useState('')
   const [pricePerNight, setPricePerNight] = useState('100')
   const [guestCount, setGuestCount] = useState('2')
   const [amenities, setAmenities] = useState<string[]>(defaultAmenities)
+  const [propertyType, setPropertyType] = useState('')
+  const [bedroomCount, setBedroomCount] = useState('')
+  const [bedCount, setBedCount] = useState('')
+  const [bathroomCount, setBathroomCount] = useState('')
+  const [highlights, setHighlights] = useState<string[]>([])
   const [editing, setEditing] = useState<ApartmentResponse | null>(null)
   const [editName, setEditName] = useState('')
+  const [editCity, setEditCity] = useState('')
+  const [editImageUrls, setEditImageUrls] = useState<string[]>([])
   const [editDescription, setEditDescription] = useState('')
   const [editPricePerNight, setEditPricePerNight] = useState('')
   const [editGuestCount, setEditGuestCount] = useState('')
   const [editAmenities, setEditAmenities] = useState<string[]>([])
+  const [editPropertyType, setEditPropertyType] = useState('')
+  const [editBedroomCount, setEditBedroomCount] = useState('')
+  const [editBedCount, setEditBedCount] = useState('')
+  const [editBathroomCount, setEditBathroomCount] = useState('')
+  const [editHighlights, setEditHighlights] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -41,6 +80,13 @@ export function HostApartmentsPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | undefined>()
   const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string[]> | undefined>()
   const [success, setSuccess] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!token || cloudinary) return
+    void getHostImageUploadConfig(token)
+      .then((config) => setCloudinary({ cloudName: config.cloudName, uploadPreset: config.uploadPreset }))
+      .catch(() => undefined)
+  }, [token, cloudinary])
 
   const load = useCallback(async () => {
     if (!token) return
@@ -64,10 +110,22 @@ export function HostApartmentsPage() {
   const openEdit = (apartment: ApartmentResponse) => {
     setEditing(apartment)
     setEditName(apartment.name)
+    setEditCity(apartment.city)
+    setEditImageUrls([...apartment.imageUrls])
     setEditDescription(apartment.description)
     setEditPricePerNight(String(apartment.pricePerNight))
     setEditGuestCount(String(apartment.guestCount))
     setEditAmenities([...apartment.amenities])
+    const presentation = parsePresentationFromMetadata(apartment.metadata ?? null)
+    setEditPropertyType(presentation.propertyType ?? '')
+    setEditBedroomCount(
+      presentation.bedroomCount != null ? String(presentation.bedroomCount) : '',
+    )
+    setEditBedCount(presentation.bedCount != null ? String(presentation.bedCount) : '')
+    setEditBathroomCount(
+      presentation.bathroomCount != null ? String(presentation.bathroomCount) : '',
+    )
+    setEditHighlights(presentation.highlights ? [...presentation.highlights] : [])
     setEditError(null)
     setEditFieldErrors(undefined)
   }
@@ -86,21 +144,38 @@ export function HostApartmentsPage() {
     setFieldErrors(undefined)
     setSuccess(null)
     try {
+      const metadata = buildPresentationMetadata({
+        propertyType: propertyType || undefined,
+        bedroomCount: readOptionalCount(bedroomCount),
+        bedCount: readOptionalCount(bedCount),
+        bathroomCount: readOptionalCount(bathroomCount),
+        highlights: highlights.map((h) => h.trim()).filter(Boolean),
+      })
       await createHostApartment(
         {
           name,
+          city,
           description,
           pricePerNight: Number(pricePerNight),
           guestCount: Number(guestCount),
           amenities,
+          ...(imageUrls.length > 0 ? { imageUrls } : {}),
+          ...(metadata ? { metadata } : {}),
         },
         token,
       )
       setName('')
+      setCity('')
+      setImageUrls([])
       setDescription('')
       setPricePerNight('100')
       setGuestCount('2')
       setAmenities(defaultAmenities)
+      setPropertyType('')
+      setBedroomCount('')
+      setBedCount('')
+      setBathroomCount('')
+      setHighlights([])
       setSuccess('Apartment created.')
       await load()
     } catch (err) {
@@ -123,15 +198,28 @@ export function HostApartmentsPage() {
     setEditFieldErrors(undefined)
     setSuccess(null)
     try {
+      const metadata = buildPresentationMetadata(
+        {
+          propertyType: editPropertyType || undefined,
+          bedroomCount: readOptionalCount(editBedroomCount),
+          bedCount: readOptionalCount(editBedCount),
+          bathroomCount: readOptionalCount(editBathroomCount),
+          highlights: editHighlights.map((h) => h.trim()).filter(Boolean),
+        },
+        editing.metadata ?? null,
+      )
       await updateHostApartment(
         editing.id,
         {
           name: editName,
+          city: editCity,
           description: editDescription,
           pricePerNight: Number(editPricePerNight),
           guestCount: Number(editGuestCount),
           amenities: editAmenities,
           version: editing.version,
+          imageUrls: editImageUrls,
+          ...(metadata ? { metadata } : {}),
         },
         token,
       )
@@ -187,6 +275,17 @@ export function HostApartmentsPage() {
             <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
           </label>
           <label className="field">
+            <span>City</span>
+            <input value={city} onChange={(e) => setCity(e.target.value)} required maxLength={100} />
+          </label>
+          <ImageUploadField
+            label="Photos (optional)"
+            imageUrls={imageUrls}
+            onChange={setImageUrls}
+            cloudinary={cloudinary}
+            disabled={isSubmitting}
+          />
+          <label className="field">
             <span>Description</span>
             <textarea
               value={description}
@@ -217,6 +316,19 @@ export function HostApartmentsPage() {
             />
           </label>
           <AmenityCheckboxes selected={amenities} onChange={setAmenities} disabled={isSubmitting} />
+          <ListingPresentationFieldsForm
+            propertyType={propertyType}
+            bedroomCount={bedroomCount}
+            bedCount={bedCount}
+            bathroomCount={bathroomCount}
+            highlights={highlights}
+            onPropertyTypeChange={setPropertyType}
+            onBedroomCountChange={setBedroomCount}
+            onBedCountChange={setBedCount}
+            onBathroomCountChange={setBathroomCount}
+            onHighlightsChange={setHighlights}
+            disabled={isSubmitting}
+          />
           <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
             {isSubmitting ? 'Creating…' : 'Create apartment'}
           </button>
@@ -278,6 +390,17 @@ export function HostApartmentsPage() {
                 <input value={editName} onChange={(e) => setEditName(e.target.value)} required maxLength={200} />
               </label>
               <label className="field">
+                <span>City</span>
+                <input value={editCity} onChange={(e) => setEditCity(e.target.value)} required maxLength={100} />
+              </label>
+              <ImageUploadField
+                label="Photos"
+                imageUrls={editImageUrls}
+                onChange={setEditImageUrls}
+                cloudinary={cloudinary}
+                disabled={isUpdating}
+              />
+              <label className="field">
                 <span>Description</span>
                 <textarea
                   value={editDescription}
@@ -308,6 +431,19 @@ export function HostApartmentsPage() {
                 />
               </label>
               <AmenityCheckboxes selected={editAmenities} onChange={setEditAmenities} disabled={isUpdating} />
+              <ListingPresentationFieldsForm
+                propertyType={editPropertyType}
+                bedroomCount={editBedroomCount}
+                bedCount={editBedCount}
+                bathroomCount={editBathroomCount}
+                highlights={editHighlights}
+                onPropertyTypeChange={setEditPropertyType}
+                onBedroomCountChange={setEditBedroomCount}
+                onBedCountChange={setEditBedCount}
+                onBathroomCountChange={setEditBathroomCount}
+                onHighlightsChange={setEditHighlights}
+                disabled={isUpdating}
+              />
               {editFieldErrors && (
                 <ul className="field-error-list">
                   {Object.entries(editFieldErrors).flatMap(([field, messages]) =>
