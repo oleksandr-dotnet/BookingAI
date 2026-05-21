@@ -8,6 +8,9 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
+        builder.Property(u => u.FirstName).HasMaxLength(100);
+        builder.Property(u => u.LastName).HasMaxLength(100);
+        builder.Property(u => u.ProfileImageUrl).HasMaxLength(2048);
         builder.Property(u => u.ExternalId).HasMaxLength(128);
         builder.HasIndex(u => new { u.SourceCompanyId, u.ExternalId })
             .IsUnique()

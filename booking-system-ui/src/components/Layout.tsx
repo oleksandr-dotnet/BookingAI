@@ -1,9 +1,12 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { ProfileCompletionBanner } from './ProfileCompletionBanner'
+import { UserAvatar } from './UserAvatar'
 import { useAuth } from '../context/AuthContext'
-import { getDefaultPathForRoles } from '../utils/jwt'
+import { useProfile } from '../context/ProfileContext'
 
 export function Layout() {
-  const { isAuthenticated, logout, isHost, isClient, isAdmin, roles } = useAuth()
+  const { isAuthenticated, logout, isHost, isClient, isAdmin } = useAuth()
+  const { profile } = useProfile()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -25,8 +28,20 @@ export function Layout() {
           {isAuthenticated && isAdmin && <Link to="/admin">Admin panel</Link>}
           {isAuthenticated ? (
             <>
-              <Link to={getDefaultPathForRoles(roles)} className="nav-account">
-                Account
+              <Link to="/profile" className="nav-account nav-account-profile">
+                {profile ? (
+                  <>
+                    <UserAvatar
+                      displayName={profile.displayName}
+                      initials={profile.initials}
+                      profileImageUrl={profile.profileImageUrl}
+                      size="sm"
+                    />
+                    <span>{profile.displayName}</span>
+                  </>
+                ) : (
+                  'Profile'
+                )}
               </Link>
               <button type="button" className="btn btn-ghost" onClick={handleLogout}>
                 Sign out
@@ -43,6 +58,7 @@ export function Layout() {
         </nav>
       </header>
       <main className="app-main">
+        {isAuthenticated && <ProfileCompletionBanner />}
         <Outlet />
       </main>
     </div>
