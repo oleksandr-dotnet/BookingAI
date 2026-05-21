@@ -12,9 +12,13 @@ public static class DependencyInjection
         services.AddScoped<IApartmentService, ApartmentService>();
         services.AddScoped<IHostApartmentService, HostApartmentService>();
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<ICheckoutSessionService, CheckoutSessionService>();
         services.AddScoped<IApartmentUpsertService, ApartmentUpsertService>();
         services.AddScoped<IApartmentAnalyticsService, ApartmentAnalyticsService>();
         services.AddScoped<ICompanyMigrationService, CompanyMigrationService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IAdminBookingService, AdminBookingService>();
+        services.AddScoped<IUserProfileService, UserProfileService>();
         return services;
     }
 }

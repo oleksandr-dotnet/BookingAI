@@ -9,7 +9,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddApiCors(builder.Configuration);
 builder.Services.AddOpenApi(options =>
 {
@@ -43,6 +43,7 @@ if (app.Environment.IsDevelopment()
     await app.Services.MigrateDatabaseAsync();
     if (app.Environment.IsDevelopment())
     {
+        await app.Services.SeedDevDataAsync(app.Configuration, app.Environment);
         app.MapOpenApi();
         app.MapScalarApiReference(options =>
         {
@@ -70,7 +71,12 @@ app.MapAuthEndpoints().WithApiCors(corsPolicyName);
 app.MapApartmentEndpoints().WithApiCors(corsPolicyName);
 app.MapHostApartmentEndpoints().WithApiCors(corsPolicyName);
 app.MapBookingEndpoints().WithApiCors(corsPolicyName);
+app.MapStripeWebhookEndpoints().WithApiCors(corsPolicyName);
+app.MapTestingStripeEndpoints(app.Environment);
 app.MapAnalyticsEndpoints().WithApiCors(corsPolicyName);
+app.MapAdminUserEndpoints().WithApiCors(corsPolicyName);
+app.MapProfileEndpoints().WithApiCors(corsPolicyName);
+app.MapAdminBookingEndpoints().WithApiCors(corsPolicyName);
 
 var summaries = new[]
 {

@@ -2,6 +2,7 @@ using System.Text;
 using BookingSystemAI.Application;
 using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Infrastructure.Data;
+using Microsoft.Extensions.Hosting;
 using BookingSystemAI.Infrastructure.Identity;
 using BookingSystemAI.Infrastructure.Options;
 using BookingSystemAI.Infrastructure.CompanyImport;
@@ -19,9 +20,12 @@ namespace BookingSystemAI.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration,
+        IHostEnvironment? environment = null)
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
+        services.Configure<StripeOptions>(configuration.GetSection(StripeOptions.SectionName));
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
             ?? throw new InvalidOperationException("Jwt configuration section is required.");
 
@@ -33,7 +37,8 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured."));
 
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(connectionString, npgsql =>
+                npgsql.ConfigureDataSource(builder => builder.EnableDynamicJson())));
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -71,6 +76,10 @@ public static class DependencyInjection
             .AddPolicy(ApplicationRoles.Client, policy => policy.RequireRole(ApplicationRoles.Client))
             .AddPolicy(ApplicationRoles.Admin, policy => policy.RequireRole(ApplicationRoles.Admin));
         services.AddScoped<IIdentityUserManager, IdentityUserManagerAdapter>();
+        services.AddScoped<IAdminUserQuery, IdentityAdminUserQuery>();
+        services.AddScoped<IUserProfileStore, IdentityUserProfileStore>();
+        services.AddScoped<IAdminIdentityOperations, IdentityAdminOperationsAdapter>();
+        services.AddScoped<IAdminBookingQuery, EfAdminBookingQuery>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IBookingRepository, BookingRepository>();
@@ -81,6 +90,18 @@ public static class DependencyInjection
         services.AddScoped<IMigrationTransactor, MigrationTransactor>();
         services.AddScoped<IExternalEntityLookup, ExternalEntityLookup>();
         services.AddScoped<IMigratedApartmentWriter, MigratedApartmentWriter>();
+        services.AddSingleton<IImageUrlValidator, CloudinaryImageUrlValidator>();
+        services.AddSingleton<IImageUploadConfigService, CloudinaryImageUploadConfigService>();
+
+        var stripeOptions = configuration.GetSection(StripeOptions.SectionName).Get<StripeOptions>() ?? new StripeOptions();
+        var useFakeStripe = stripeOptions.UseFakeGateway
+            || environment?.IsEnvironment("Testing") == true
+            || string.IsNullOrWhiteSpace(stripeOptions.SecretKey);
+
+        if (useFakeStripe)
+            services.AddSingleton<IStripeCheckoutGateway, FakeStripeCheckoutGateway>();
+        else
+            services.AddSingleton<IStripeCheckoutGateway, StripeCheckoutGateway>();
 
         return services;
     }
@@ -93,5 +114,20 @@ public static class DependencyInjection
         await db.Database.MigrateAsync();
         await IdentityRoleSeeder.SeedAsync(services);
         await IdentityAdminSeeder.SeedAsync(services, configuration);
+    }
+
+    public static async Task SeedDevDataAsync(
+        this IServiceProvider services,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        if (!environment.IsDevelopment())
+            return;
+
+        if (!configuration.GetValue("SeedDevData", defaultValue: false))
+            return;
+
+        await DevDataSeeder.SeedAsync(services, cancellationToken);
     }
 }
