@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddScoped<IApartmentUpsertService, ApartmentUpsertService>();
         services.AddScoped<IApartmentAnalyticsService, ApartmentAnalyticsService>();
         services.AddScoped<ICompanyMigrationService, CompanyMigrationService>();
+        services.AddScoped<IUserProfileService, UserProfileService>();
+        services.AddSingleton<IImageUrlValidator, HttpsImageUrlValidator>();
         return services;
     }
 }

@@ -116,6 +116,34 @@ export interface ApartmentOccupancyAnalytics {
   averageNightsBooked: number
 }
 
+export interface UserProfile {
+  userId: string
+  email: string
+  userName: string | null
+  roles: string[]
+  firstName: string | null
+  lastName: string | null
+  dateOfBirth: string | null
+  profileImageUrl: string | null
+  displayName: string
+  initials: string
+  profileComplete: boolean
+}
+
+export interface UpdateUserProfileRequest {
+  firstName: string
+  lastName: string
+  dateOfBirth: string | null
+  profileImageUrl: string | null
+}
+
+export interface UserDisplay {
+  userId: string
+  displayName: string
+  profileImageUrl: string | null
+  initials: string
+}
+
 export interface ValidationProblemDetails {
   type?: string
   title?: string

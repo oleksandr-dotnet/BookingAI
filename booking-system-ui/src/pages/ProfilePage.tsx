@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { getProfileImageUploadConfig, updateMyProfile } from '../api/profile'
+import { updateMyProfile } from '../api/profile'
 import { ProfilePhotoUpload } from '../components/ProfilePhotoUpload'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../context/AuthContext'
@@ -28,13 +28,6 @@ export function ProfilePage() {
     setDateOfBirth(profile.dateOfBirth ?? '')
     setProfileImageUrl(profile.profileImageUrl)
   }, [profile])
-
-  useEffect(() => {
-    if (!token || cloudinary) return
-    void getProfileImageUploadConfig(token)
-      .then((config) => setCloudinary({ cloudName: config.cloudName, uploadPreset: config.uploadPreset }))
-      .catch(() => undefined)
-  }, [token, cloudinary])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()

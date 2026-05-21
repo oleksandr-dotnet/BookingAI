@@ -71,6 +71,7 @@ app.MapApartmentEndpoints().WithApiCors(corsPolicyName);
 app.MapHostApartmentEndpoints().WithApiCors(corsPolicyName);
 app.MapBookingEndpoints().WithApiCors(corsPolicyName);
 app.MapAnalyticsEndpoints().WithApiCors(corsPolicyName);
+app.MapProfileEndpoints().WithApiCors(corsPolicyName);
 
 var summaries = new[]
 {

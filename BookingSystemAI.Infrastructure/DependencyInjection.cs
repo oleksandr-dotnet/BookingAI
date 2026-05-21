@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IMigrationTransactor, MigrationTransactor>();
         services.AddScoped<IExternalEntityLookup, ExternalEntityLookup>();
         services.AddScoped<IMigratedApartmentWriter, MigratedApartmentWriter>();
+        services.AddScoped<IUserProfileStore, IdentityUserProfileStore>();
 
         return services;
     }

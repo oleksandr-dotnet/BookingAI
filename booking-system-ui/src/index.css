@@ -622,6 +622,85 @@ code {
   font-size: 0.9rem;
 }
 
+.nav-account-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.user-avatar-sm {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.7rem;
+}
+
+.user-avatar-md {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.85rem;
+}
+
+.user-avatar-lg {
+  width: 4rem;
+  height: 4rem;
+  font-size: 1.1rem;
+}
+
+.profile-completion-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.profile-page .panel-header {
+  align-items: center;
+}
+
+.profile-form {
+  max-width: 32rem;
+}
+
+.profile-photo-upload {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.profile-photo-preview img {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-photo-placeholder {
+  display: inline-flex;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 900px) {
   .host-layout {
     grid-template-columns: 1fr;

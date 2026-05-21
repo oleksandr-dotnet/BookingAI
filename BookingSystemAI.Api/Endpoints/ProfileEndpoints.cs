@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using BookingSystemAI.Application.Abstractions;
 using BookingSystemAI.Application.DTOs;
 using BookingSystemAI.Application.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -32,15 +31,6 @@ public static class ProfileEndpoints
                 return operation;
             });
 
-        group.MapGet("/image-upload-config", GetImageUploadConfig)
-            .WithName("GetProfileImageUploadConfig")
-            .WithOpenApi(operation =>
-            {
-                operation.Summary = "Cloudinary upload config (Profile)";
-                operation.Description = "Returns public Cloudinary settings for profile photo upload.";
-                return operation;
-            });
-
         var users = app.MapGroup("/users")
             .WithTags("Profile")
             .RequireAuthorization();
@@ -55,12 +45,6 @@ public static class ProfileEndpoints
             });
 
         return group;
-    }
-
-    private static IResult GetImageUploadConfig(IImageUploadConfigService configService)
-    {
-        var config = configService.GetUploadConfig();
-        return config is null ? Results.NotFound() : Results.Ok(config);
     }
 
     private static async Task<IResult> GetMyProfile(

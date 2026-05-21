@@ -1,4 +1,4 @@
-import type { ImageUploadConfig, UpdateUserProfileRequest, UserDisplay, UserProfile } from '../types/api'
+import type { UpdateUserProfileRequest, UserDisplay, UserProfile } from '../types/api'
 import { apiFetch } from './client'
 
 export function getMyProfile(token: string) {
@@ -10,10 +10,6 @@ export function updateMyProfile(request: UpdateUserProfileRequest, token: string
     method: 'PUT',
     body: JSON.stringify(request),
   }, token)
-}
-
-export function getProfileImageUploadConfig(token: string) {
-  return apiFetch<ImageUploadConfig>('/profile/image-upload-config', {}, token)
 }
 
 export function getUserDisplay(userId: string, token: string) {
